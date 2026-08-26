@@ -1,0 +1,1675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mehedi's University Management System</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #160d24; color: #e5e7eb; line-height: 1.5; min-height: 100vh;
+    }
+    .navbar {
+      background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%);
+      color: white; padding: 0.75rem 1.25rem; display: flex; align-items: center;
+      flex-direction: column; align-items: flex-start; gap: 0.55rem; padding-bottom: 3.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.15); position: sticky; top: 0; z-index: 100;
+    }
+    .navbar .brand { font-weight: 700; font-size: 1.05rem; color: white; text-decoration: none; white-space: nowrap; }
+    .menu-toggle { display: inline-flex; align-items: center; justify-content: center; position: absolute; top: 3.1rem; right: 1.25rem; padding: 0.4rem 0.8rem; border: 1px solid rgba(255,255,255,0.35); border-radius: 6px; background: rgba(255,255,255,0.12); color: white; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+    .navbar .nav-links { display: none; flex-direction: column; position: absolute; top: 5.6rem; right: 1.25rem; gap: 0.15rem; width: 180px; padding: 0.5rem; background: #4c1d95; border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
+    .navbar .nav-links.menu-open { display: flex; }
+    .navbar .nav-links a {
+      color: rgba(255,255,255,0.85); text-decoration: none; padding: 0.35rem 0.65rem;
+      border-radius: 6px; font-size: 0.85rem; font-weight: 500;
+    }
+    .navbar .nav-links a:hover, .navbar .nav-links a.active { background: rgba(255,255,255,0.2); color: white; }
+    .navbar > div:last-child { position: absolute; top: 0.75rem; right: 1.25rem; width: auto; justify-content: flex-end; margin-left: 0 !important; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 1.25rem; animation: pageEnter 0.45s ease-out both; }
+    .navbar { animation: navEnter 0.35s ease-out both; }
+    .container > * { animation: contentEnter 0.5s ease-out both; }
+    .container > *:nth-child(2) { animation-delay: 0.12s; }
+    .container > *:nth-child(3) { animation-delay: 0.24s; }
+    .container > *:nth-child(4) { animation-delay: 0.36s; }
+    .stats-grid > * { animation: contentEnter 0.45s ease-out both; }
+    .stats-grid > *:nth-child(2) { animation-delay: 0.08s; }
+    .stats-grid > *:nth-child(3) { animation-delay: 0.16s; }
+    .stats-grid > *:nth-child(4) { animation-delay: 0.24s; }
+    .stats-grid > *:nth-child(5) { animation-delay: 0.32s; }
+    .stats-grid > *:nth-child(6) { animation-delay: 0.4s; }
+    .stats-grid > *:nth-child(7) { animation-delay: 0.48s; }
+    .stats-grid > *:nth-child(8) { animation-delay: 0.56s; }
+    @keyframes pageEnter {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes navEnter {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes contentEnter {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .page-title { font-size: 1.6rem; color: #f9fafb; margin-bottom: 1.25rem; font-weight: 700; }
+    .card {
+      background: #241936; border: 1px solid #4c3a63; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      margin-bottom: 1.25rem; overflow: hidden;
+    }
+    .card-header {
+      background: #302047; padding: 0.75rem 1.1rem; font-weight: 600; color: #f3f4f6;
+      border-bottom: 1px solid #4c3a63; font-size: 0.95rem;
+    }
+    .card-body { padding: 1.1rem; }
+    .form-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.9rem; margin-bottom: 1rem;
+    }
+    .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: #d1d5db; margin-bottom: 0.3rem; }
+    .form-group input, .form-group select {
+      width: 100%; padding: 0.55rem 0.7rem; background: #160d24; color: #f9fafb; border: 1px solid #5b4674; border-radius: 6px; font-size: 0.9rem;
+    }
+    .form-group input:focus, .form-group select:focus {
+      outline: none; border-color: #a78bfa; box-shadow: 0 0 0 3px rgba(124,58,237,0.25);
+    }
+    .btn {
+      display: inline-block; padding: 0.45rem 0.9rem; border-radius: 6px; font-size: 0.85rem;
+      font-weight: 600; cursor: pointer; border: none; text-decoration: none; color: white;
+    }
+    .btn-primary { background: #7c3aed; }
+    .btn-primary:hover { background: #6d28d9; }
+    .btn-danger { background: #e53e3e; }
+    .btn-danger:hover { background: #c53030; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th, td { padding: 0.55rem 0.7rem; text-align: left; border-bottom: 1px solid #374151; }
+    th { background: #111827; font-weight: 600; color: #d1d5db; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.02em; }
+    tr:hover td { background: #302047; }
+    .table-wrap { overflow-x: auto; }
+    .empty { color: #9ca3af; padding: 1rem 0; text-align: center; }
+    .flash { padding: 0.7rem 1rem; border-radius: 8px; margin-bottom: 0.75rem; font-size: 0.9rem; }
+    .flash-success { background: #c6f6d5; color: #22543d; animation: welcomeFlash 0.9s ease-out both; }
+    .welcome-banner { padding: 0.85rem 1rem; margin-bottom: 1rem; border-left: 4px solid #a78bfa; border-radius: 8px; background: #302047; color: #f3e8ff; font-size: 1rem; font-weight: 600; animation: welcomeFlash 0.9s ease-out both; }
+    .flash-danger { background: #fed7d7; color: #742a2a; }
+    .flash-info { background: #bee3f8; color: #2a4365; }
+    .flash-warning { background: #feebc8; color: #744210; }
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.9rem; margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: #241936; border: 1px solid #4c3a63; border-radius: 10px; padding: 1.1rem; text-align: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3); border-top: 3px solid #7c3aed;
+    }
+    .stat-card .number { font-size: 1.75rem; font-weight: 700; color: #f9fafb; }
+    .stat-card .label { font-size: 0.8rem; color: #9ca3af; margin-top: 0.2rem; }
+    .badge {
+      display: inline-block; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
+    }
+    .badge-success { background: #c6f6d5; color: #22543d; }
+    .badge-warning { background: #feebc8; color: #744210; }
+    .badge-danger { background: #fed7d7; color: #742a2a; }
+    /* Auth pages */
+    .auth-wrap {
+      display: flex; align-items: center; justify-content: center; min-height: 100vh;
+      background: linear-gradient(135deg, #160d24 0%, #32145f 50%, #4c1d95 100%); animation: authBackgroundIn 0.8s ease-out both;
+    }
+    .auth-box {
+      background: #241936; border: 1px solid #5b4674; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+      width: 100%; max-width: 520px; min-height: 560px; padding: 3.5rem; margin: 1rem; animation: welcomeIn 1.2s ease-out both;
+    }
+    .auth-box h1 { text-align: center; color: #f9fafb; font-size: 1.35rem; white-space: nowrap; margin-bottom: 0.35rem; animation: titleIn 1s ease-out 0.25s both; }
+    .welcome-text { text-align: center; color: #c4b5fd; font-size: 1.05rem; font-weight: 600; margin-bottom: 0.5rem; animation: welcomeTextIn 1s ease-out 0.55s both; }
+    .auth-box .subtitle, .auth-box #flashArea, .auth-box .login-types, .auth-box form, .auth-box .auth-footer { animation: loginContentIn 0.65s ease-out 0.7s both; }
+    .auth-box .subtitle { text-align: center; color: #d1d5db; margin-bottom: 2rem; font-size: 1rem; }
+    .auth-box .form-group { margin-bottom: 1rem; }
+    .auth-box .form-group label { color: #e5e7eb; }
+    .auth-box .form-group input { background: #160d24; color: #f9fafb; border-color: #5b4674; padding: 0.75rem 0.8rem; }
+    .login-types { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin-bottom: 1.5rem; }
+    .login-type { padding: 0.55rem 0.35rem; border: 1px solid #5b4674; border-radius: 6px; background: #160d24; color: #d1d5db; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+    .login-type.active, .login-type:hover { background: #7c3aed; border-color: #a78bfa; color: white; }
+    .auth-box .btn-full { width: 100%; padding: 0.7rem; font-size: 1rem; margin-top: 0.4rem; border-radius: 8px; }
+    .auth-footer { text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: #d1d5db; }
+    .auth-footer a { color: #a78bfa; font-weight: 600; text-decoration: none; cursor: pointer; }
+    .session-times { display: flex; gap: 0.75rem; align-items: center; color: rgba(255,255,255,0.9); font-size: 0.75rem; white-space: nowrap; }
+    .profile-picture { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; flex: 0 0 34px; border-radius: 50%; background: #a78bfa; color: #241936; font-size: 0.8rem; font-weight: 800; border: 2px solid rgba(255,255,255,0.8); text-decoration: none; overflow: hidden; }
+    .profile-picture img { width: 100%; height: 100%; object-fit: cover; }
+    @keyframes welcomeIn {
+      from { opacity: 0; transform: translateY(24px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes authBackgroundIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes titleIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes welcomeTextIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes loginContentIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes welcomeFlash {
+      from { opacity: 0; transform: translateY(-12px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .demo-hint { font-size: 0.78rem; color: #a0aec0; text-align: center; margin-top: 0.9rem; }
+    @media (max-width: 600px) {
+      .navbar { align-items: stretch; padding: 0.75rem 1rem; gap: 0.6rem; }
+      .navbar .brand { text-align: center; white-space: normal; font-size: 0.95rem; }
+      .menu-toggle { position: static; align-self: center; order: 2; }
+      .navbar .nav-links { position: static; width: 100%; padding: 0; background: transparent; border: 0; box-shadow: none; align-items: stretch; order: 3; }
+      .navbar .nav-links a { text-align: center; padding: 0.5rem 0.65rem; }
+      .navbar > div:last-child {
+        position: static; width: 100%; margin-left: 0 !important;
+        flex-direction: column; align-items: center; justify-content: center;
+        gap: 0.4rem; order: 4;
+      }
+      .session-times { white-space: normal; flex-wrap: wrap; justify-content: center; }
+      .auth-box { padding: 2.5rem 1rem; }
+      .auth-box h1 { font-size: 1.15rem; }
+      .login-types { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      table { font-size: 0.8rem; }
+      th, td { padding: 0.45rem 0.5rem; }
+      #ai-widget-container { right: 12px; bottom: 12px; }
+      #ai-chat-box {
+        position: fixed; left: 12px; right: 12px; bottom: 80px;
+        width: auto; height: 65vh;
+      }
+    }
+    .config-banner {
+      background: #fef3c7; color: #92400e; padding: 0.75rem 1rem; text-align: center; font-size: 0.9rem;
+      border-bottom: 1px solid #f59e0b;
+    }
+    .config-banner code { background: #fde68a; padding: 0.1rem 0.35rem; border-radius: 4px; }
+    #umsLoading {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.25);
+      display: none; align-items: center; justify-content: center; z-index: 9999; color: #fff; pointer-events: none;
+    }
+    #umsLoading .box { background: #1e3a5f; padding: 1rem 1.5rem; border-radius: 8px; }
+    .hidden { display: none !important; }
+
+    /* AI Assistant Widget Styles */
+#ai-widget-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+}
+#ai-chat-button {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%);
+  color: #fff;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#ai-chat-box {
+  display: none;
+  flex-direction: column;
+  width: 320px;
+  height: 420px;
+  background: #241936;
+  border: 1px solid #4c3a63;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  overflow: hidden;
+  position: absolute;
+  bottom: 65px;
+  right: 0;
+}
+.ai-chat-header {
+  background: #302047;
+  padding: 0.75rem;
+  color: #f3f4f6;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #4c3a63;
+}
+.ai-chat-messages {
+  flex: 1;
+  padding: 0.75rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+.ai-msg {
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  max-width: 80%;
+  word-wrap: break-word;
+}
+.ai-msg-user {
+  background: #7c3aed;
+  color: #fff;
+  align-self: flex-end;
+}
+.ai-msg-assistant {
+  background: #160d24;
+  color: #e5e7eb;
+  border: 1px solid #4c3a63;
+  align-self: flex-start;
+}
+.ai-chat-input-area {
+  display: flex;
+  padding: 0.5rem;
+  background: #160d24;
+  border-top: 1px solid #4c3a63;
+}
+.ai-chat-input-area input {
+  flex: 1;
+  padding: 0.4rem 0.6rem;
+  background: #241936;
+  border: 1px solid #5b4674;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.85rem;
+}
+.ai-chat-input-area button {
+  margin-left: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  background: #7c3aed;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+  <div id="umsLoading"><div class="box">Loading data…</div></div>
+  <div id="configBanner" class="config-banner hidden">
+    Open this file in a text editor and set <code>SCRIPT_URL</code> near the top of the script to your Google Apps Script Web App URL.
+  </div>
+  <div id="app"></div>
+
+<script>
+/* ============================================================
+   CONFIG – paste your Google Apps Script Web App URL here
+   ============================================================ */
+const UMS_CONFIG = {
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbw98mIINXU082AN1x8olzDPOB8Bg255hRwMAP7H5W9Ptcth3Wbu7IQyuBV_hmCz2feOwA/exec",
+  SHOW_LOADING: false
+};
+
+/* ============================================================
+   FLASH
+   ============================================================ */
+const Flash = (() => {
+  const KEY = "ums_flash";
+  function push(message, category) {
+    const messages = readRaw();
+    messages.push([category || "info", message]);
+    sessionStorage.setItem(KEY, JSON.stringify(messages));
+  }
+  function readRaw() {
+    const raw = sessionStorage.getItem(KEY);
+    return raw ? JSON.parse(raw) : [];
+  }
+  function consume() {
+    const messages = readRaw();
+    sessionStorage.removeItem(KEY);
+    return messages;
+  }
+  function render(containerEl) {
+    const messages = consume();
+    messages.forEach(([category, message]) => {
+      const div = document.createElement("div");
+      div.className = "flash flash-" + category;
+      div.textContent = message;
+      containerEl.appendChild(div);
+      if (category === "success") {
+        setTimeout(() => {
+          div.remove();
+        }, 3000);
+      }
+    });
+  }
+  return { push, consume, render };
+})();
+
+/* ============================================================
+   DB – Google Sheets API
+   ============================================================ */
+const DB = (() => {
+  const cache = {};
+
+  function showLoading(on) {
+    if (!UMS_CONFIG.SHOW_LOADING) return;
+    const el = document.getElementById("umsLoading");
+    if (el) el.style.display = on ? "flex" : "none";
+  }
+
+  async function api(action, payload = {}) {
+    if (!UMS_CONFIG.SCRIPT_URL || UMS_CONFIG.SCRIPT_URL.indexOf("PASTE_YOUR") !== -1) {
+      throw new Error("Please set SCRIPT_URL in this HTML file to your Google Apps Script Web App URL.");
+    }
+    showLoading(true);
+    try {
+      const body = JSON.stringify(Object.assign({ action }, payload));
+      const res = await fetch(UMS_CONFIG.SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: body,
+        redirect: "follow"
+      });
+      const text = await res.text();
+      let json;
+      try { json = JSON.parse(text); } catch (e) {
+        throw new Error("Invalid response from Google Sheets API. Check deployment (Anyone access).");
+      }
+      if (json && json.ok === false) throw new Error(json.error || "API error");
+      return json;
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  function invalidate(table) { delete cache[table]; }
+
+  async function getTable(table) {
+    if (cache[table]) return cache[table].slice();
+    const res = await api("list", { table });
+    cache[table] = res.data || [];
+    return cache[table].slice();
+  }
+
+  async function insert(table, row) {
+    const res = await api("insert", { table, data: row });
+    invalidate(table);
+    return res.id;
+  }
+
+  async function update(table, id, patch) {
+    await api("update", { table, id, data: patch });
+    invalidate(table);
+    return true;
+  }
+
+  async function remove(table, id) {
+    await api("delete", { table, id });
+    invalidate(table);
+    return true;
+  }
+
+  async function removeWhere(table, field, value) {
+    await api("deletewhere", { table, field, value });
+    invalidate(table);
+  }
+
+  async function findOne(table, predicate) {
+    const rows = await getTable(table);
+    return rows.find(predicate) || null;
+  }
+
+  async function findAll(table, predicate) {
+    const rows = await getTable(table);
+    return predicate ? rows.filter(predicate) : rows;
+  }
+
+  async function count(table) {
+    return (await getTable(table)).length;
+  }
+
+  function today() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function dateTime() {
+    return new Date().toISOString().replace("T", " ").slice(0, 19);
+  }
+
+  async function seedIfNeeded() {
+    try { await api("seedadmin"); } catch (e) { console.warn("seedadmin:", e.message); }
+  }
+
+  async function loginRemote(usernameOrEmail, password) {
+    return api("login", { usernameOrEmail, password });
+  }
+
+  async function signupRemote(data) {
+    return api("signup", { data });
+  }
+
+  return {
+    getTable, insert, update, remove, removeWhere, findOne, findAll, count,
+    today, dateTime, seedIfNeeded, loginRemote, signupRemote, api, invalidate
+  };
+})();
+
+/* ============================================================
+   AUTH
+   ============================================================ */
+const AUTH = (() => {
+  const SESSION_KEY = "ums_session";
+
+  function getSession() {
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }
+  function setSession(session) {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  }
+  function clearSession() {
+    localStorage.removeItem(SESSION_KEY);
+  }
+  function isLoggedIn() { return !!getSession(); }
+  function isAdmin() {
+    const s = getSession();
+    return !!s && s.role === "admin";
+  }
+
+  async function login(usernameOrEmail, password, loginType) {
+    const res = await DB.loginRemote(usernameOrEmail, password);
+    if (res.ok && res.user) {
+      setSession({
+        user_id: res.user.id,
+        username: res.user.username,
+        email: res.user.email || usernameOrEmail,
+        full_name: res.user.full_name || res.user.username,
+        role: res.user.role,
+        login_type: loginType || "administrative",
+        entry_time: new Date().toLocaleString(),
+        avatar_data: null
+      });
+      return { ok: true, user: res.user };
+    }
+    return { ok: false, message: res.error || "Invalid credentials" };
+  }
+
+  async function signup({ username, email, full_name, password, confirm_password }) {
+    username = (username || "").trim();
+    email = (email || "").trim();
+    full_name = (full_name || "").trim();
+    if (!username || !email || !password) return { ok: false, message: "All required fields must be filled." };
+    if (password !== confirm_password) return { ok: false, message: "Passwords do not match." };
+    if (password.length < 6) return { ok: false, message: "Password must be at least 6 characters." };
+    try {
+      const res = await DB.signupRemote({ username, email, full_name: full_name || username, password });
+      if (res.ok) return { ok: true, message: res.message || "Account created! Please login." };
+      return { ok: false, message: res.error || "Signup failed" };
+    } catch (e) {
+      return { ok: false, message: e.message || "Signup failed" };
+    }
+  }
+
+  function updateAvatar(avatarData) {
+    const session = getSession();
+    if (!session) return;
+    session.avatar_data = avatarData;
+    setSession(session);
+  }
+
+  function logout() { clearSession(); }
+
+  function requireLogin() {
+    const s = getSession();
+    if (!s) {
+      Flash.push("Please login first.", "danger");
+      location.hash = "#login";
+      throw new Error("redirect");
+    }
+    return s;
+  }
+
+  function requireAdmin() {
+    const s = requireLogin();
+    const isStudentView = s.login_type === "student";
+    const canManage = !isStudentView && (s.role === "admin" || s.role === "faculty");
+    if (!canManage) {
+      Flash.push("Only administrators and faculty members can edit or delete data.", "danger");
+      location.hash = "#dashboard";
+      throw new Error("redirect");
+    }
+    return s;
+  }
+
+  return { getSession, isLoggedIn, isAdmin, login, signup, updateAvatar, logout, requireLogin, requireAdmin };
+})();
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const H = {
+  dash(v) { return v === undefined || v === null || v === "" ? "—" : v; },
+  esc(v) {
+    const d = document.createElement("div");
+    d.textContent = String(H.dash(v));
+    return d.innerHTML;
+  },
+  money(v) { return Number(v || 0).toFixed(2); },
+  badge(text, type) { return `<span class="badge badge-${type}">${H.esc(text)}</span>`; },
+  fullName(r) { return `${r.first_name || ""} ${r.last_name || ""}`.trim() || "—"; },
+  studentLabel(s) { return s.student_id ? `${s.student_id} – ${H.fullName(s)}` : "—"; },
+  courseLabel(c) { return c.course_code ? `${c.course_code} – ${c.title || ""}` : "—"; },
+  confirm(msg, fn) { if (window.confirm(msg)) fn(); }
+};
+
+function calcGrade(marks, max) {
+  const pct = max > 0 ? (marks / max) * 100 : 0;
+  if (pct >= 90) return "A+";
+  if (pct >= 80) return "A";
+  if (pct >= 70) return "B";
+  if (pct >= 60) return "C";
+  if (pct >= 50) return "D";
+  return "F";
+}
+
+/* ============================================================
+   ROUTER + LAYOUT
+   ============================================================ */
+const NAV = [
+  { key: "dashboard", label: "Dashboard" },
+  { key: "students", label: "Students" },
+  { key: "faculty", label: "Faculty" },
+  { key: "courses", label: "Courses" },
+  { key: "enrollment", label: "Enrollment" },
+  { key: "fees", label: "Fees" },
+  { key: "exams", label: "Exams" },
+  { key: "library", label: "Library" },
+  { key: "hostel", label: "Hostel" }
+];
+
+function generatedAvatar(name, email) {
+  const label = (name || email || "User").trim().split(/\s+/).map(word => word[0]).join("").slice(0, 2).toUpperCase();
+  let hash = 0;
+  for (const character of (email || name || "user")) hash = ((hash << 5) - hash) + character.charCodeAt(0) | 0;
+  const hue = Math.abs(hash) % 360;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="50" fill="hsl(${hue},65%,55%)"/><text x="50" y="56" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="34" font-weight="700" fill="white">${label}</text></svg>`;
+  return "data:image/svg+xml," + encodeURIComponent(svg);
+}
+
+function profileAvatar(session) {
+  return session.avatar_data || generatedAvatar(session.full_name, session.email || session.username);
+}
+
+function timeGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
+function getRoute() {
+  const h = (location.hash || "#login").replace("#", "").split("?")[0];
+  return h || "login";
+}
+
+function renderNavbar(activeKey, session) {
+  const links = NAV.map(item =>
+    `<a href="#${item.key}" class="${item.key === activeKey ? "active" : ""}">${item.label}</a>`
+  ).join("");
+  const profileName = session.full_name || session.username || "User";
+  const avatar = profileAvatar(session);
+  return `
+    <nav class="navbar">
+      <a href="#dashboard" class="brand">🎓 Mehedi's University Management System</a>
+      <button type="button" class="menu-toggle" id="menuToggle" aria-expanded="false">☰ Menu</button>
+      <div class="nav-links">${links}</div>
+      <div style="display:flex;align-items:center;gap:0.6rem;margin-left:auto;">
+        <div class="session-times">
+          <span>Entry: ${H.esc(session.entry_time || "-")}</span>
+          <span id="currentTime">Time: ${H.esc(new Date().toLocaleTimeString())}</span>
+        </div>
+        <span style="color:rgba(255,255,255,0.9);font-size:0.85rem;">
+          ${H.esc(profileName)}
+          <span style="background:rgba(255,255,255,0.2);padding:0.15rem 0.5rem;border-radius:999px;font-size:0.75rem;margin-left:0.25rem;">
+            ${H.esc((session.role || "user").toUpperCase())}
+          </span>
+        </span>
+        <a href="#profile" class="profile-picture" title="Open profile"><img src="${avatar}" alt="${H.esc(profileName)} profile picture"></a>
+        <a href="#" id="logoutLink" style="color:white;background:rgba(255,255,255,0.15);padding:0.3rem 0.7rem;border-radius:6px;text-decoration:none;font-size:0.85rem;font-weight:600;">Logout</a>
+      </div>
+    </nav>`;
+}
+
+async function showAppShell(activeKey) {
+  const session = AUTH.requireLogin();
+  const app = document.getElementById("app");
+  app.innerHTML = renderNavbar(activeKey, session) +
+    `<div class="container"><div id="flashArea"></div><div id="pageContent"></div></div>`;
+  if (session.login_type === "student" || session.role === "user") {
+    const info = document.createElement("div");
+    info.className = "flash flash-info session-access-info";
+    info.innerHTML = 'You are viewing the system as a <strong>Student</strong>. You can view data, but cannot add, edit or delete.';
+    document.getElementById("flashArea").appendChild(info);
+  } else if (session.login_type === "faculty" || session.role === "faculty") {
+    const info = document.createElement("div");
+    info.className = "flash flash-info session-access-info";
+    info.innerHTML = 'You are logged in as <strong>Faculty</strong>. You can add, edit and delete data.';
+    document.getElementById("flashArea").appendChild(info);
+  }
+  const accessInfo = document.querySelector(".session-access-info");
+  if (accessInfo) setTimeout(() => accessInfo.remove(), 3000);
+  Flash.render(document.getElementById("flashArea"));
+  if (window.umsClockInterval) clearInterval(window.umsClockInterval);
+  window.umsClockInterval = setInterval(() => {
+    const clock = document.getElementById("currentTime");
+    if (clock) clock.textContent = "Time: " + new Date().toLocaleTimeString();
+  }, 1000);
+  document.getElementById("logoutLink").addEventListener("click", e => {
+    e.preventDefault();
+    const exitTime = DB.dateTime();
+    AUTH.logout();
+    if (window.umsClockInterval) clearInterval(window.umsClockInterval);
+    Flash.push("Logged out successfully. Exit time: " + exitTime, "success");
+    location.hash = "#login";
+  });
+  document.querySelector(".profile-picture").addEventListener("click", e => {
+    e.preventDefault();
+    location.hash = "#profile";
+    route();
+  });
+  document.getElementById("menuToggle").addEventListener("click", () => {
+    const menu = document.querySelector(".nav-links");
+    const toggle = document.getElementById("menuToggle");
+    const isOpen = menu.classList.toggle("menu-open");
+    toggle.setAttribute("aria-expanded", String(isOpen));
+    toggle.textContent = isOpen ? "✕ Close" : "☰ Menu";
+  });
+  return session;
+}
+
+/* ============================================================
+   PAGES
+   ============================================================ */
+async function pageLogin() {
+  if (AUTH.isLoggedIn()) { location.hash = "#dashboard"; return; }
+  document.getElementById("app").innerHTML = `
+    <div class="auth-wrap"><div class="auth-box">
+      <h1>🎓 Mehedi's University Management System</h1>
+      <p class="welcome-text">Welcome</p>
+      <p class="subtitle">Sign in</p>
+      <div id="flashArea"></div>
+      <div class="login-types" role="tablist" aria-label="Login type">
+        <button type="button" class="login-type" data-login-type="student">Student Login</button>
+        <button type="button" class="login-type" data-login-type="faculty">Faculty Login</button>
+        <button type="button" class="login-type active" data-login-type="administrative">Administrative Login</button>
+      </div>
+      <form id="loginForm">
+        <div class="form-group"><label>Username or Email</label>
+          <input type="text" id="username" required autofocus></div>
+        <div class="form-group"><label>Password</label>
+          <input type="password" id="password" required></div>
+        <button type="submit" class="btn btn-primary btn-full" id="loginBtn">Sign In</button>
+      </form>
+      <div class="auth-footer">No account? <a href="#signup">Sign Up</a></div>
+    </div></div>`;
+  Flash.render(document.getElementById("flashArea"));
+  DB.seedIfNeeded().catch(() => {});
+  let selectedLoginType = "administrative";
+  document.querySelectorAll("[data-login-type]").forEach(typeButton => {
+    typeButton.addEventListener("click", () => {
+      selectedLoginType = typeButton.getAttribute("data-login-type");
+      document.querySelectorAll("[data-login-type]").forEach(button => button.classList.toggle("active", button === typeButton));
+    });
+  });
+  document.getElementById("loginForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const btn = document.getElementById("loginBtn");
+    btn.disabled = true; btn.textContent = "Signing in…";
+    try {
+      const result = await AUTH.login(
+        document.getElementById("username").value.trim(),
+        document.getElementById("password").value,
+        selectedLoginType
+      );
+      if (result.ok) {
+        Flash.push(timeGreeting() + ", welcome to Mehedi's University Management System!", "success");
+        location.hash = "#dashboard";
+      } else {
+        Flash.push(result.message || "Invalid username or password.", "danger");
+        location.hash = "#login";
+        route();
+      }
+    } catch (err) {
+      Flash.push("Connection error: " + err.message, "danger");
+      location.hash = "#login";
+      route();
+    }
+  });
+}
+
+async function pageSignup() {
+  if (AUTH.isLoggedIn()) { location.hash = "#dashboard"; return; }
+  document.getElementById("app").innerHTML = `
+    <div class="auth-wrap"><div class="auth-box">
+      <h1>🎓 Create Account</h1>
+      <p class="subtitle">Sign up as a new user</p>
+      <div id="flashArea"></div>
+      <form id="signupForm">
+        <div class="form-group"><label>Full Name</label><input type="text" id="full_name"></div>
+        <div class="form-group"><label>Username *</label><input type="text" id="username" required></div>
+        <div class="form-group"><label>Email *</label><input type="email" id="email" required></div>
+        <div class="form-group"><label>Password *</label><input type="password" id="password" required minlength="6"></div>
+        <div class="form-group"><label>Confirm Password *</label><input type="password" id="confirm_password" required></div>
+        <button type="submit" class="btn btn-primary btn-full" id="signupBtn">Sign Up</button>
+      </form>
+      <p class="demo-hint">New accounts are <strong>User</strong> (view only).</p>
+      <div class="auth-footer">Already have an account? <a href="#login">Sign In</a></div>
+    </div></div>`;
+  Flash.render(document.getElementById("flashArea"));
+  document.getElementById("signupForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const btn = document.getElementById("signupBtn");
+    btn.disabled = true; btn.textContent = "Creating…";
+    const result = await AUTH.signup({
+      full_name: document.getElementById("full_name").value,
+      username: document.getElementById("username").value,
+      email: document.getElementById("email").value,
+      password: document.getElementById("password").value,
+      confirm_password: document.getElementById("confirm_password").value
+    });
+    Flash.push(result.message || (result.ok ? "OK" : "Failed"), result.ok ? "success" : "danger");
+    location.hash = result.ok ? "#login" : "#signup";
+    route();
+  });
+}
+
+async function pageDashboard() {
+  const session = await showAppShell("dashboard");
+  const [sc, fc, cc, ec, fees, bc, rc, ac, students] = await Promise.all([
+    DB.count("students"), DB.count("faculty"), DB.count("courses"), DB.count("enrollments"),
+    DB.getTable("fees"), DB.count("books"), DB.count("rooms"), DB.count("allocations"),
+    DB.getTable("students")
+  ]);
+  const pending = fees.filter(f => !(f.paid === true || f.paid === 1 || f.paid === "TRUE" || f.status === "Paid")).length;
+  const recent = students.slice().sort((a, b) => b.id - a.id).slice(0, 5);
+  const welcomeBanner = session.login_type === "administrative"
+    ? `<div class="welcome-banner">Welcome to System Administrator</div>`
+    : "";
+  const recentRows = recent.length
+    ? `<table><thead><tr><th>Student ID</th><th>Name</th><th>Department</th><th>Year</th><th>Email</th></tr></thead><tbody>
+       ${recent.map(s => `<tr><td>${H.esc(s.student_id)}</td><td>${H.esc(H.fullName(s))}</td>
+       <td>${H.esc(s.department)}</td><td>${H.esc(s.year)}</td><td>${H.esc(s.email)}</td></tr>`).join("")}
+       </tbody></table>`
+    : `<p class="empty">No students yet.</p>`;
+
+  if (getRoute() !== "dashboard") return;
+  document.getElementById("pageContent").innerHTML = `
+    ${welcomeBanner}
+    <h1 class="page-title">Dashboard</h1>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="number">${sc}</div><div class="label">Students</div></div>
+      <div class="stat-card"><div class="number">${fc}</div><div class="label">Faculty</div></div>
+      <div class="stat-card"><div class="number">${cc}</div><div class="label">Courses</div></div>
+      <div class="stat-card"><div class="number">${ec}</div><div class="label">Enrollments</div></div>
+      <div class="stat-card"><div class="number">${pending}</div><div class="label">Pending Fees</div></div>
+      <div class="stat-card"><div class="number">${bc}</div><div class="label">Library Books</div></div>
+      <div class="stat-card"><div class="number">${rc}</div><div class="label">Hostel Rooms</div></div>
+      <div class="stat-card"><div class="number">${ac}</div><div class="label">Allocations</div></div>
+    </div>
+    <div class="card"><div class="card-header">Recently Added Students</div>
+    <div class="card-body table-wrap">${recentRows}</div></div>`;
+}
+
+async function pageStudents() {
+  await showAppShell("students");
+  const students = (await DB.getTable("students")).slice().sort((a, b) => b.id - a.id);
+  const rows = students.length
+    ? `<table><thead><tr><th>ID</th><th>Student ID</th><th>Name</th><th>Department</th><th>Year</th><th>Email</th><th>Phone</th><th>Actions</th></tr></thead><tbody>
+       ${students.map(s => `<tr>
+         <td>${s.id}</td><td>${H.esc(s.student_id)}</td><td>${H.esc(H.fullName(s))}</td>
+         <td>${H.esc(s.department)}</td><td>${H.esc(s.year)}</td><td>${H.esc(s.email)}</td><td>${H.esc(s.phone)}</td>
+         <td><a href="#" class="btn btn-danger" data-del="${s.id}">Delete</a></td></tr>`).join("")}
+       </tbody></table>`
+    : `<p class="empty">No students yet.</p>`;
+
+  document.getElementById("pageContent").innerHTML = `
+    <h1 class="page-title">Students</h1>
+    <div class="card"><div class="card-header">Add New Student</div><div class="card-body">
+      <form id="addForm"><div class="form-grid">
+        <div class="form-group"><label>Student ID *</label><input name="student_id" required placeholder="STU001"></div>
+        <div class="form-group"><label>First Name *</label><input name="first_name" required></div>
+        <div class="form-group"><label>Last Name *</label><input name="last_name" required></div>
+        <div class="form-group"><label>Email</label><input name="email" type="email"></div>
+        <div class="form-group"><label>Phone</label><input name="phone"></div>
+        <div class="form-group"><label>Department</label><input name="department"></div>
+        <div class="form-group"><label>Year</label><select name="year"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
+        <div class="form-group"><label>Gender</label><select name="gender"><option value="">—</option><option>Male</option><option>Female</option><option>Other</option></select></div>
+        <div class="form-group"><label>Address</label><input name="address"></div>
+      </div><button type="submit" class="btn btn-primary">Add Student</button></form>
+    </div></div>
+    <div class="card"><div class="card-header">All Students (${students.length})</div>
+    <div class="card-body table-wrap">${rows}</div></div>`;
+
+  document.getElementById("addForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    try { AUTH.requireAdmin(); } catch (err) { return; }
+    const f = e.target;
+    const student_id = f.student_id.value.trim();
+    if (await DB.findOne("students", s => s.student_id === student_id)) {
+      Flash.push("Student ID already exists.", "danger"); route(); return;
+    }
+    try {
+      await DB.insert("students", {
+        student_id, first_name: f.first_name.value.trim(), last_name: f.last_name.value.trim(),
+        email: f.email.value.trim() || null, phone: f.phone.value.trim() || null,
+        department: f.department.value.trim() || null, year: f.year.value || null,
+        gender: f.gender.value || null, address: f.address.value.trim() || null, created_at: DB.today()
+      });
+      Flash.push("Student added.", "success");
+    } catch (err) { Flash.push(err.message, "danger"); }
+    route();
+  });
+
+  document.querySelectorAll("[data-del]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault();
+      try { AUTH.requireAdmin(); } catch (err) { return; }
+      const id = parseInt(el.getAttribute("data-del"), 10);
+      H.confirm("Delete this student and related records?", async () => {
+        try {
+          await DB.remove("students", id);
+          await DB.removeWhere("enrollments", "student_id", id);
+          await DB.removeWhere("fees", "student_id", id);
+          await DB.removeWhere("results", "student_id", id);
+          await DB.removeWhere("issues", "student_id", id);
+          const alloc = await DB.findOne("allocations", r => Number(r.student_id) === id);
+          if (alloc) {
+            const room = await DB.findOne("rooms", r => Number(r.id) === Number(alloc.room_id));
+            if (room) await DB.update("rooms", room.id, { occupied: Math.max(0, Number(room.occupied) - 1) });
+            await DB.removeWhere("allocations", "student_id", id);
+          }
+          Flash.push("Student deleted.", "info");
+        } catch (err) { Flash.push(err.message, "danger"); }
+        route();
+      });
+    });
+  });
+}
+
+async function pageFaculty() {
+  await showAppShell("faculty");
+  const faculty = (await DB.getTable("faculty")).slice().sort((a, b) => b.id - a.id);
+  const rows = faculty.length
+    ? `<table><thead><tr><th>ID</th><th>Faculty ID</th><th>Name</th><th>Department</th><th>Designation</th><th>Email</th><th>Phone</th><th>Actions</th></tr></thead><tbody>
+       ${faculty.map(f => `<tr>
+         <td>${f.id}</td><td>${H.esc(f.faculty_id)}</td><td>${H.esc(H.fullName(f))}</td>
+         <td>${H.esc(f.department)}</td><td>${H.esc(f.designation)}</td><td>${H.esc(f.email)}</td><td>${H.esc(f.phone)}</td>
+         <td><a href="#" class="btn btn-danger" data-del="${f.id}">Delete</a></td></tr>`).join("")}
+       </tbody></table>`
+    : `<p class="empty">No faculty yet.</p>`;
+
+  document.getElementById("pageContent").innerHTML = `
+    <h1 class="page-title">Faculty</h1>
+    <div class="card"><div class="card-header">Add Faculty</div><div class="card-body">
+      <form id="addForm"><div class="form-grid">
+        <div class="form-group"><label>Faculty ID *</label><input name="faculty_id" required placeholder="FAC001"></div>
+        <div class="form-group"><label>First Name *</label><input name="first_name" required></div>
+        <div class="form-group"><label>Last Name *</label><input name="last_name" required></div>
+        <div class="form-group"><label>Email</label><input name="email" type="email"></div>
+        <div class="form-group"><label>Phone</label><input name="phone"></div>
+        <div class="form-group"><label>Department</label><input name="department"></div>
+        <div class="form-group"><label>Designation</label><input name="designation" placeholder="Professor"></div>
+      </div><button type="submit" class="btn btn-primary">Add Faculty</button></form>
+    </div></div>
+    <div class="card"><div class="card-header">All Faculty (${faculty.length})</div>
+    <div class="card-body table-wrap">${rows}</div></div>`;
+
+  document.getElementById("addForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    try { AUTH.requireAdmin(); } catch (err) { return; }
+    const f = e.target;
+    const faculty_id = f.faculty_id.value.trim();
+    if (await DB.findOne("faculty", r => r.faculty_id === faculty_id)) {
+      Flash.push("Faculty ID already exists.", "danger"); route(); return;
+    }
+    try {
+      await DB.insert("faculty", {
+        faculty_id, first_name: f.first_name.value.trim(), last_name: f.last_name.value.trim(),
+        email: f.email.value.trim() || null, phone: f.phone.value.trim() || null,
+        department: f.department.value.trim() || null, designation: f.designation.value.trim() || null,
+        created_at: DB.today()
+      });
+      Flash.push("Faculty added.", "success");
+    } catch (err) { Flash.push(err.message, "danger"); }
+    route();
+  });
+
+  document.querySelectorAll("[data-del]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault();
+      try { AUTH.requireAdmin(); } catch (err) { return; }
+      const id = parseInt(el.getAttribute("data-del"), 10);
+      H.confirm("Delete this faculty member?", async () => {
+        try {
+          await DB.remove("faculty", id);
+          const courses = await DB.getTable("courses");
+          for (const c of courses) {
+            if (Number(c.faculty_id) === id) await DB.update("courses", c.id, { faculty_id: null });
+          }
+          Flash.push("Faculty deleted.", "info");
+        } catch (err) { Flash.push(err.message, "danger"); }
+        route();
+      });
+    });
+  });
+}
+
+async function pageCourses() {
+  await showAppShell("courses");
+  const [courses, facultyList] = await Promise.all([DB.getTable("courses"), DB.getTable("faculty")]);
+  courses.sort((a, b) => b.id - a.id);
+  const facultyName = fid => {
+    if (!fid) return "—";
+    const f = facultyList.find(r => Number(r.id) === Number(fid));
+    return f ? H.fullName(f) : "—";
+  };
+  const facultyOpts = facultyList.map(f =>
+    `<option value="${f.id}">${H.esc(H.fullName(f))} (${H.esc(f.faculty_id)})</option>`
+  ).join("");
+  const rows = courses.length
+    ? `<table><thead><tr><th>ID</th><th>Code</th><th>Title</th><th>Credits</th><th>Department</th><th>Faculty</th><th>Semester</th><th>Actions</th></tr></thead><tbody>
+       ${courses.map(c => `<tr>
+         <td>${c.id}</td><td>${H.esc(c.course_code)}</td><td>${H.esc(c.title)}</td><td>${H.esc(c.credits)}</td>
+         <td>${H.esc(c.department)}</td><td>${H.esc(facultyName(c.faculty_id))}</td><td>${H.esc(c.semester)}</td>
+         <td><a href="#" class="btn btn-danger" data-del="${c.id}">Delete</a></td></tr>`).join("")}
+       </tbody></table>`
+    : `<p class="empty">No courses yet.</p>`;
+
+  document.getElementById("pageContent").innerHTML = `
+    <h1 class="page-title">Courses</h1>
+    <div class="card"><div class="card-header">Add Course</div><div class="card-body">
+      <form id="addForm"><div class="form-grid">
+        <div class="form-group"><label>Course Code *</label><input name="course_code" required placeholder="CS101"></div>
+        <div class="form-group"><label>Title *</label><input name="title" required></div>
+        <div class="form-group"><label>Credits</label><input name="credits" type="number" value="3" min="1"></div>
+        <div class="form-group"><label>Department</label><input name="department"></div>
+        <div class="form-group"><label>Faculty</label><select name="faculty_id"><option value="">— None —</option>${facultyOpts}</select></div>
+        <div class="form-group"><label>Semester</label><input name="semester" placeholder="Fall 2026"></div>
+      </div><button type="submit" class="btn btn-primary">Add Course</button></form>
+    </div></div>
+    <div class="card"><div class="card-header">All Courses (${courses.length})</div>
+    <div class="card-body table-wrap">${rows}</div></div>`;
+
+  document.getElementById("addForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    try { AUTH.requireAdmin(); } catch (err) { return; }
+    const f = e.target;
+    const course_code = f.course_code.value.trim();
+    if (await DB.findOne("courses", r => r.course_code === course_code)) {
+      Flash.push("Course code already exists.", "danger"); route(); return;
+    }
+    try {
+      await DB.insert("courses", {
+        course_code, title: f.title.value.trim(),
+        credits: parseInt(f.credits.value || "3", 10),
+        department: f.department.value.trim() || null,
+        faculty_id: f.faculty_id.value ? parseInt(f.faculty_id.value, 10) : null,
+        semester: f.semester.value.trim() || null
+      });
+      Flash.push("Course added.", "success");
+    } catch (err) { Flash.push(err.message, "danger"); }
+    route();
+  });
+
+  document.querySelectorAll("[data-del]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault();
+      try { AUTH.requireAdmin(); } catch (err) { return; }
+      const id = parseInt(el.getAttribute("data-del"), 10);
+      H.confirm("Delete this course?", async () => {
+        try {
+          await DB.remove("courses", id);
+          await DB.removeWhere("enrollments", "course_id", id);
+          const exams = await DB.findAll("exams", r => Number(r.course_id) === id);
+          for (const ex of exams) {
+            await DB.removeWhere("results", "exam_id", ex.id);
+            await DB.remove("exams", ex.id);
+          }
+          Flash.push("Course deleted.", "info");
+        } catch (err) { Flash.push(err.message, "danger"); }
+        route();
+      });
+    });
+  });
+}
+
+async function pageEnrollment() {
+  await showAppShell("enrollment");
+  const [students, courses, enrollments] = await Promise.all([
+    DB.getTable("students"), DB.getTable("courses"), DB.getTable("enrollments")
+  ]);
+  enrollments.sort((a, b) => b.id - a.id);
+  const studentOpts = students.map(s => `<option value="${s.id}">${H.esc(H.studentLabel(s))}</option>`).join("");
+  const courseOpts = courses.map(c => `<option value="${c.id}">${H.esc(H.courseLabel(c))}</option>`).join("");
+  const rows = enrollments.length
+    ? `<table><thead><tr><th>ID</th><th>Student</th><th>Course</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+       ${enrollments.map(e => {
+         const s = students.find(r => Number(r.id) === Number(e.student_id)) || {};
+         const c = courses.find(r => Number(r.id) === Number(e.course_id)) || {};
+         return `<tr><td>${e.id}</td><td>${H.esc(H.studentLabel(s))}</td><td>${H.esc(H.courseLabel(c))}</td>
+           <td>${H.esc(e.enroll_date)}</td><td>${H.esc(e.status || "Active")}</td>
+           <td><a href="#" class="btn btn-danger" data-del="${e.id}">Delete</a></td></tr>`;
+       }).join("")}
+       </tbody></table>`
+    : `<p class="empty">No enrollments yet.</p>`;
+
+  document.getElementById("pageContent").innerHTML = `
+    <h1 class="page-title">Enrollment</h1>
+    <div class="card"><div class="card-header">Enroll Student</div><div class="card-body">
+      <form id="addForm"><div class="form-grid">
+        <div class="form-group"><label>Student *</label><select name="student_id" required><option value="">—</option>${studentOpts}</select></div>
+        <div class="form-group"><label>Course *</label><select name="course_id" required><option value="">—</option>${courseOpts}</select></div>
+      </div><button type="submit" class="btn btn-primary">Enroll</button></form>
+    </div></div>
+    <div class="card"><div class="card-header">All Enrollments (${enrollments.length})</div>
+    <div class="card-body table-wrap">${rows}</div></div>`;
+
+  document.getElementById("addForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    try { AUTH.requireAdmin(); } catch (err) { return; }
+    const f = e.target;
+    const student_id = parseInt(f.student_id.value, 10);
+    const course_id = parseInt(f.course_id.value, 10);
+    if (await DB.findOne("enrollments", r => Number(r.student_id) === student_id && Number(r.course_id) === course_id)) {
+      Flash.push("Already enrolled.", "danger"); route(); return;
+    }
+    try {
+      await DB.insert("enrollments", { student_id, course_id, enroll_date: DB.today(), status: "Active" });
+      Flash.push("Enrolled.", "success");
+    } catch (err) { Flash.push(err.message, "danger"); }
+    route();
+  });
+
+  document.querySelectorAll("[data-del]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault();
+      try { AUTH.requireAdmin(); } catch (err) { return; }
+      const id = parseInt(el.getAttribute("data-del"), 10);
+      H.confirm("Remove enrollment?", async () => {
+        try { await DB.remove("enrollments", id); Flash.push("Removed.", "info"); }
+        catch (err) { Flash.push(err.message, "danger"); }
+        route();
+      });
+    });
+  });
+}
+
+async function pageFees() {
+  await showAppShell("fees");
+  const isPaid = f => f.paid === true || f.paid === 1 || f.paid === "TRUE" || f.paid === "true" || f.status === "Paid";
+  const [students, fees] = await Promise.all([DB.getTable("students"), DB.getTable("fees")]);
+  fees.sort((a, b) => b.id - a.id);
+  const studentOpts = students.map(s => `<option value="${s.id}">${H.esc(H.studentLabel(s))}</option>`).join("");
+  const rows = fees.length
+    ? `<table><thead><tr><th>ID</th><th>Student</th><th>Amount</th><th>Type</th><th>Due</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+       ${fees.map(f => {
+         const s = students.find(r => Number(r.id) === Number(f.student_id)) || {};
+         const paid = isPaid(f);
+         return `<tr><td>${f.id}</td><td>${H.esc(H.studentLabel(s))}</td><td>${H.money(f.amount)}</td>
+           <td>${H.esc(f.fee_type)}</td><td>${H.esc(f.due_date)}</td>
+           <td>${paid ? H.badge("Paid", "success") : H.badge("Pending", "warning")}</td>
+           <td>${!paid ? `<a href="#" class="btn btn-primary" data-pay="${f.id}">Mark Paid</a> ` : ""}
+               <a href="#" class="btn btn-danger" data-del="${f.id}">Delete</a></td></tr>`;
+       }).join("")}
+       </tbody></table>`
+    : `<p class="empty">No fees yet.</p>`;
+
+  document.getElementById("pageContent").innerHTML = `
+    <h1 class="page-title">Fees</h1>
+    <div class="card"><div class="card-header">Add Fee</div><div class="card-body">
+      <form id="addForm"><div class="form-grid">
+        <div class="form-group"><label>Student *</label><select name="student_id" required><option value="">—</option>${studentOpts}</select></div>
+        <div class="form-group"><label>Amount *</label><input name="amount" type="number" step="0.01" min="0" required></div>
+        <div class="form-group"><label>Fee Type</label><input name="fee_type" placeholder="Tuition"></div>
+        <div class="form-group"><label>Due Date</label><input name="due_date" type="date"></div>
+      </div><button type="submit" class="btn btn-primary">Add Fee</button></form>
+    </div></div>
+    <div class="card"><div class="card-header">All Fees (${fees.length})</div>
+    <div class="card-body table-wrap">${rows}</div></div>`;
+
+  document.getElementById("addForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    try { AUTH.requireAdmin(); } catch (err) { return; }
+    const f = e.target;
+    try {
+      await DB.insert("fees", {
+        student_id: parseInt(f.student_id.value, 10),
+        amount: parseFloat(f.amount.value),
+        fee_type: f.fee_type.value.trim() || null,
+        due_date: f.due_date.value || null, paid: false, paid_date: null, created_at: DB.today()
+      });
+      Flash.push("Fee added.", "success");
+    } catch (err) { Flash.push(err.message, "danger"); }
+    route();
+  });
+
+  document.querySelectorAll("[data-pay]").forEach(el => {
+    el.addEventListener("click", async e => {
+      e.preventDefault();
+      try { AUTH.requireAdmin(); } catch (err) { return; }
+      try {
+        await DB.update("fees", parseInt(el.getAttribute("data-pay"), 10), { paid: true, paid_date: DB.today() });
+        Flash.push("Marked paid.", "success");
+      } catch (err) { Flash.push(err.message, "danger"); }
+      route();
+    });
+  });
+
+  document.querySelectorAll("[data-del]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault();
+      try { AUTH.requireAdmin(); } catch (err) { return; }
+      const id = parseInt(el.getAttribute("data-del"), 10);
+      H.confirm("Delete fee?", async () => {
+        try { await DB.remove("fees", id); Flash.push("Deleted.", "info"); }
+        catch (err) { Flash.push(err.message, "danger"); }
+        route();
+      });
+    });
+  });
+}
+
+async function pageExams() {
+  await showAppShell("exams");
+  const [courses, students, examsList, results] = await Promise.all([
+    DB.getTable("courses"), DB.getTable("students"), DB.getTable("exams"), DB.getTable("results")
+  ]);
+  examsList.sort((a, b) => b.id - a.id);
+  results.sort((a, b) => b.id - a.id);
+  const courseOpts = courses.map(c => `<option value="${c.id}">${H.esc(H.courseLabel(c))}</option>`).join("");
+  const studentOpts = students.map(s => `<option value="${s.id}">${H.esc(H.studentLabel(s))}</option>`).join("");
+  const examOpts = examsList.map(e => {
+    const c = courses.find(r => Number(r.id) === Number(e.course_id)) || {};
+    return `<option value="${e.id}">${H.esc(e.exam_name)} (${H.esc(c.course_code || "")})</option>`;
+  }).join("");
+
+  const examRows = examsList.length
+    ? `<table><thead><tr><th>ID</th><th>Exam</th><th>Course</th><th>Date</th><th>Max</th><th>Actions</th></tr></thead><tbody>
+       ${examsList.map(e => {
+         const c = courses.find(r => Number(r.id) === Number(e.course_id)) || {};
+         return `<tr><td>${e.id}</td><td>${H.esc(e.exam_name)}</td><td>${H.esc(c.course_code)}</td>
+           <td>${H.esc(e.exam_date)}</td><td>${H.esc(e.max_marks)}</td>
+           <td><a href="#" class="btn btn-danger" data-del-exam="${e.id}">Delete</a></td></tr>`;
+       }).join("")}
+       </tbody></table>`
+    : `<p class="empty">No exams yet.</p>`;
+
+  const resultRows = results.length
+    ? `<table><thead><tr><th>ID</th><th>Exam</th><th>Student</th><th>Marks</th><th>Grade</th></tr></thead><tbody>
+       ${results.map(r => {
+         const ex = examsList.find(row => Number(row.id) === Number(r.exam_id)) || {};
+         const s = students.find(row => Number(row.id) === Number(r.student_id)) || {};
+         return `<tr><td>${r.id}</td><td>${H.esc(ex.exam_name)}</td><td>${H.esc(H.studentLabel(s))}</td>
+           <td>${H.esc(r.marks_obtained)} / ${H.esc(ex.max_marks)}</td><td>${H.esc(r.grade)}</td></tr>`;
+       }).join("")}
+       </tbody></table>`
+    : `<p class="empty">No results yet.</p>`;
+
+  document.getElementById("pageContent").innerHTML = `
+    <h1 class="page-title">Exams & Results</h1>
+    <div class="card"><div class="card-header">Add Exam</div><div class="card-body">
+      <form id="addExamForm"><div class="form-grid">
+        <div class="form-group"><label>Course *</label><select name="course_id" required><option value="">—</option>${courseOpts}</select></div>
+        <div class="form-group"><label>Exam Name *</label><input name="exam_name" required placeholder="Midterm"></div>
+        <div class="form-group"><label>Date</label><input name="exam_date" type="date"></div>
+        <div class="form-group"><label>Max Marks</label><input name="max_marks" type="number" value="100" min="1"></div>
+      </div><button type="submit" class="btn btn-primary">Add Exam</button></form>
+    </div></div>
+    <div class="card"><div class="card-header">Record Result</div><div class="card-body">
+      <form id="addResultForm"><div class="form-grid">
+        <div class="form-group"><label>Exam *</label><select name="exam_id" required><option value="">—</option>${examOpts}</select></div>
+        <div class="form-group"><label>Student *</label><select name="student_id" required><option value="">—</option>${studentOpts}</select></div>
+        <div class="form-group"><label>Marks *</label><input name="marks_obtained" type="number" required min="0"></div>
+      </div><button type="submit" class="btn btn-primary">Save Result</button></form>
+    </div></div>
+    <div class="card"><div class="card-header">Exams (${examsList.length})</div><div class="card-body table-wrap">${examRows}</div></div>
+    <div class="card"><div class="card-header">Results (${results.length})</div><div class="card-body table-wrap">${resultRows}</div></div>`;
+
+  document.getElementById("addExamForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    try { AUTH.requireAdmin(); } catch (err) { return; }
+    const f = e.target;
+    try {
+      await DB.insert("exams", {
+        course_id: parseInt(f.course_id.value, 10),
+        exam_name: f.exam_name.value.trim(),
+        exam_date: f.exam_date.value || null,
+        max_marks: parseInt(f.max_marks.value || "100", 10)
+      });
+      Flash.push("Exam added.", "success");
+    } catch (err) { Flash.push(err.message, "danger"); }
+    route();
+  });
+
+  document.getElementById("addResultForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    try { AUTH.requireAdmin(); } catch (err) { return; }
+    const f = e.target;
+    const exam_id = parseInt(f.exam_id.value, 10);
+    const student_id = parseInt(f.student_id.value, 10);
+    const marks = parseFloat(f.marks_obtained.value);
+    if (await DB.findOne("results", r => Number(r.exam_id) === exam_id && Number(r.student_id) === student_id)) {
+      Flash.push("Result already exists.", "danger"); route(); return;
+    }
+    const exam = await DB.findOne("exams", r => Number(r.id) === exam_id);
+    const grade = calcGrade(marks, exam ? Number(exam.max_marks) : 100);
+    try {
+      await DB.insert("results", { exam_id, student_id, marks_obtained: marks, grade });
+      Flash.push("Result saved (Grade: " + grade + ").", "success");
+    } catch (err) { Flash.push(err.message, "danger"); }
+    route();
+  });
+
+  document.querySelectorAll("[data-del-exam]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault();
+      try { AUTH.requireAdmin(); } catch (err) { return; }
+      const id = parseInt(el.getAttribute("data-del-exam"), 10);
+      H.confirm("Delete exam and results?", async () => {
+        try {
+          await DB.removeWhere("results", "exam_id", id);
+          await DB.remove("exams", id);
+          Flash.push("Exam deleted.", "info");
+        } catch (err) { Flash.push(err.message, "danger"); }
+        route();
+      });
+    });
+  });
+}
+
+async function pageLibrary() {
+  await showAppShell("library");
+  const [students, books, issues] = await Promise.all([
+    DB.getTable("students"), DB.getTable("books"), DB.getTable("issues")
+  ]);
+  books.sort((a, b) => b.id - a.id);
+  issues.sort((a, b) => b.id - a.id);
+  const available = books.filter(b => Number(b.available_copies) > 0);
+  const studentOpts = students.map(s => `<option value="${s.id}">${H.esc(H.studentLabel(s))}</option>`).join("");
+  const bookOpts = available.map(b =>
+    `<option value="${b.id}">${H.esc(b.title)} – ${b.available_copies} left</option>`
+  ).join("");
+
+  const bookRows = books.length
+    ? `<table><thead><tr><th>ID</th><th>ISBN</th><th>Title</th><th>Author</th><th>Category</th><th>Total</th><th>Available</th><th>Actions</th></tr></thead><tbody>
+       ${books.map(b => `<tr>
+         <td>${b.id}</td><td>${H.esc(b.isbn)}</td><td>${H.esc(b.title)}</td><td>${H.esc(b.author)}</td>
+         <td>${H.esc(b.category)}</td><td>${H.esc(b.total_copies)}</td><td>${H.esc(b.available_copies)}</td>
+         <td><a href="#" class="btn btn-danger" data-del-book="${b.id}">Delete</a></td></tr>`).join("")}
+       </tbody></table>`
+    : `<p class="empty">No books yet.</p>`;
+
+  const issueRows = issues.length
+    ? `<table><thead><tr><th>ID</th><th>Book</th><th>Student</th><th>Issue</th><th>Due</th><th>Return</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+       ${issues.map(i => {
+         const b = books.find(r => Number(r.id) === Number(i.book_id)) || {};
+         const s = students.find(r => Number(r.id) === Number(i.student_id)) || {};
+         const active = (i.status || "Issued") !== "Returned";
+         return `<tr><td>${i.id}</td><td>${H.esc(b.title)}</td><td>${H.esc(H.studentLabel(s))}</td>
+           <td>${H.esc(i.issue_date)}</td><td>${H.esc(i.due_date)}</td><td>${H.esc(i.return_date)}</td>
+           <td>${active ? H.badge("Issued", "warning") : H.badge("Returned", "success")}</td>
+           <td>${active ? `<a href="#" class="btn btn-primary" data-return="${i.id}">Return</a>` : "—"}</td></tr>`;
+       }).join("")}
+       </tbody></table>`
+    : `<p class="empty">No issues yet.</p>`;
+
+  document.getElementById("pageContent").innerHTML = `
+    <h1 class="page-title">Library</h1>
+    <div class="card"><div class="card-header">Add Book</div><div class="card-body">
+      <form id="addBookForm"><div class="form-grid">
+        <div class="form-group"><label>ISBN</label><input name="isbn"></div>
+        <div class="form-group"><label>Title *</label><input name="title" required></div>
+        <div class="form-group"><label>Author</label><input name="author"></div>
+        <div class="form-group"><label>Category</label><input name="category"></div>
+        <div class="form-group"><label>Copies</label><input name="total_copies" type="number" value="1" min="1"></div>
+      </div><button type="submit" class="btn btn-primary">Add Book</button></form>
+    </div></div>
+    <div class="card"><div class="card-header">Issue Book</div><div class="card-body">
+      <form id="issueForm"><div class="form-grid">
+        <div class="form-group"><label>Book *</label><select name="book_id" required><option value="">—</option>${bookOpts}</select></div>
+        <div class="form-group"><label>Student *</label><select name="student_id" required><option value="">—</option>${studentOpts}</select></div>
+        <div class="form-group"><label>Due Date</label><input name="due_date" type="date"></div>
+      </div><button type="submit" class="btn btn-primary">Issue</button></form>
+    </div></div>
+    <div class="card"><div class="card-header">Books (${books.length})</div><div class="card-body table-wrap">${bookRows}</div></div>
+    <div class="card"><div class="card-header">Issues (${issues.length})</div><div class="card-body table-wrap">${issueRows}</div></div>`;
+
+  document.getElementById("addBookForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    try { AUTH.requireAdmin(); } catch (err) { return; }
+    const f = e.target;
+    const total = parseInt(f.total_copies.value || "1", 10);
+    try {
+      await DB.insert("books", {
+        isbn: f.isbn.value.trim() || null, title: f.title.value.trim(),
+        author: f.author.value.trim() || null, category: f.category.value.trim() || null,
+        total_copies: total, available_copies: total
+      });
+      Flash.push("Book added.", "success");
+    } catch (err) { Flash.push(err.message, "danger"); }
+    route();
+  });
+
+  document.getElementById("issueForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    try { AUTH.requireAdmin(); } catch (err) { return; }
+    const f = e.target;
+    const book_id = parseInt(f.book_id.value, 10);
+    const student_id = parseInt(f.student_id.value, 10);
+    const book = await DB.findOne("books", r => Number(r.id) === book_id);
+    if (!book || Number(book.available_copies) < 1) {
+      Flash.push("Book not available.", "danger"); route(); return;
+    }
+    try {
+      await DB.insert("issues", {
+        book_id, student_id, issue_date: DB.today(),
+        due_date: f.due_date.value || null, return_date: null, status: "Issued"
+      });
+      await DB.update("books", book_id, { available_copies: Number(book.available_copies) - 1 });
+      Flash.push("Book issued.", "success");
+    } catch (err) { Flash.push(err.message, "danger"); }
+    route();
+  });
+
+  document.querySelectorAll("[data-return]").forEach(el => {
+    el.addEventListener("click", async e => {
+      e.preventDefault();
+      try { AUTH.requireAdmin(); } catch (err) { return; }
+      const id = parseInt(el.getAttribute("data-return"), 10);
+      try {
+        const issue = await DB.findOne("issues", r => Number(r.id) === id);
+        await DB.update("issues", id, { status: "Returned", return_date: DB.today() });
+        const book = await DB.findOne("books", r => Number(r.id) === Number(issue.book_id));
+        if (book) await DB.update("books", book.id, { available_copies: Number(book.available_copies) + 1 });
+        Flash.push("Returned.", "success");
+      } catch (err) { Flash.push(err.message, "danger"); }
+      route();
+    });
+  });
+
+  document.querySelectorAll("[data-del-book]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault();
+      try { AUTH.requireAdmin(); } catch (err) { return; }
+      const id = parseInt(el.getAttribute("data-del-book"), 10);
+      H.confirm("Delete book?", async () => {
+        try {
+          await DB.remove("books", id);
+          await DB.removeWhere("issues", "book_id", id);
+          Flash.push("Deleted.", "info");
+        } catch (err) { Flash.push(err.message, "danger"); }
+        route();
+      });
+    });
+  });
+}
+
+async function pageHostel() {
+  await showAppShell("hostel");
+  const [rooms, students, allocations] = await Promise.all([
+    DB.getTable("rooms"), DB.getTable("students"), DB.getTable("allocations")
+  ]);
+  rooms.sort((a, b) => String(a.room_number).localeCompare(String(b.room_number)));
+  allocations.sort((a, b) => b.id - a.id);
+  const active = allocations.filter(a => (a.status || "Active") === "Active");
+  const activeIds = new Set(active.map(a => Number(a.student_id)));
+  const unallocated = students.filter(s => !activeIds.has(Number(s.id)));
+  const availableRooms = rooms.filter(r => Number(r.occupied) < Number(r.capacity));
+  const studentOpts = unallocated.map(s => `<option value="${s.id}">${H.esc(H.studentLabel(s))}</option>`).join("");
+  const roomOpts = availableRooms.map(r =>
+    `<option value="${r.id}">${H.esc(r.room_number)} (${r.occupied}/${r.capacity})</option>`
+  ).join("");
+
+  const roomRows = rooms.length
+    ? `<table><thead><tr><th>ID</th><th>Room</th><th>Block</th><th>Capacity</th><th>Occupied</th><th>Actions</th></tr></thead><tbody>
+       ${rooms.map(r => `<tr>
+         <td>${r.id}</td><td>${H.esc(r.room_number)}</td><td>${H.esc(r.block)}</td>
+         <td>${H.esc(r.capacity)}</td><td>${H.esc(r.occupied)}</td>
+         <td><a href="#" class="btn btn-danger" data-del-room="${r.id}">Delete</a></td></tr>`).join("")}
+       </tbody></table>`
+    : `<p class="empty">No rooms yet.</p>`;
+
+  const allocRows = allocations.length
+    ? `<table><thead><tr><th>ID</th><th>Student</th><th>Room</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+       ${allocations.map(a => {
+         const s = students.find(r => Number(r.id) === Number(a.student_id)) || {};
+         const room = rooms.find(r => Number(r.id) === Number(a.room_id)) || {};
+         const act = (a.status || "Active") === "Active";
+         return `<tr><td>${a.id}</td><td>${H.esc(H.studentLabel(s))}</td><td>${H.esc(room.room_number)}</td>
+           <td>${H.esc(a.allocate_date)}</td>
+           <td>${act ? H.badge("Active", "success") : H.badge(a.status || "—", "warning")}</td>
+           <td>${act ? `<a href="#" class="btn btn-danger" data-vacate="${a.id}">Vacate</a>` : "—"}</td></tr>`;
+       }).join("")}
+       </tbody></table>`
+    : `<p class="empty">No allocations yet.</p>`;
+
+  document.getElementById("pageContent").innerHTML = `
+    <h1 class="page-title">Hostel</h1>
+    <div class="card"><div class="card-header">Add Room</div><div class="card-body">
+      <form id="addRoomForm"><div class="form-grid">
+        <div class="form-group"><label>Room Number *</label><input name="room_number" required placeholder="A-101"></div>
+        <div class="form-group"><label>Block</label><input name="block"></div>
+        <div class="form-group"><label>Capacity</label><input name="capacity" type="number" value="2" min="1"></div>
+      </div><button type="submit" class="btn btn-primary">Add Room</button></form>
+    </div></div>
+    <div class="card"><div class="card-header">Allocate Room</div><div class="card-body">
+      <form id="allocForm"><div class="form-grid">
+        <div class="form-group"><label>Student *</label><select name="student_id" required><option value="">—</option>${studentOpts}</select></div>
+        <div class="form-group"><label>Room *</label><select name="room_id" required><option value="">—</option>${roomOpts}</select></div>
+      </div><button type="submit" class="btn btn-primary">Allocate</button></form>
+    </div></div>
+    <div class="card"><div class="card-header">Rooms (${rooms.length})</div><div class="card-body table-wrap">${roomRows}</div></div>
+    <div class="card"><div class="card-header">Allocations (${allocations.length})</div><div class="card-body table-wrap">${allocRows}</div></div>`;
+
+  document.getElementById("addRoomForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    try { AUTH.requireAdmin(); } catch (err) { return; }
+    const f = e.target;
+    const room_number = f.room_number.value.trim();
+    if (await DB.findOne("rooms", r => r.room_number === room_number)) {
+      Flash.push("Room already exists.", "danger"); route(); return;
+    }
+    try {
+      await DB.insert("rooms", {
+        room_number, block: f.block.value.trim() || null,
+        capacity: parseInt(f.capacity.value || "2", 10), occupied: 0
+      });
+      Flash.push("Room added.", "success");
+    } catch (err) { Flash.push(err.message, "danger"); }
+    route();
+  });
+
+  document.getElementById("allocForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    try { AUTH.requireAdmin(); } catch (err) { return; }
+    const f = e.target;
+    const student_id = parseInt(f.student_id.value, 10);
+    const room_id = parseInt(f.room_id.value, 10);
+    const room = await DB.findOne("rooms", r => Number(r.id) === room_id);
+    if (!room || Number(room.occupied) >= Number(room.capacity)) {
+      Flash.push("Room full.", "danger"); route(); return;
+    }
+    try {
+      await DB.insert("allocations", {
+        room_id, student_id, allocate_date: DB.today(), status: "Active"
+      });
+      await DB.update("rooms", room_id, { occupied: Number(room.occupied) + 1 });
+      Flash.push("Allocated.", "success");
+    } catch (err) { Flash.push(err.message, "danger"); }
+    route();
+  });
+
+  document.querySelectorAll("[data-vacate]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault();
+      try { AUTH.requireAdmin(); } catch (err) { return; }
+      const id = parseInt(el.getAttribute("data-vacate"), 10);
+      H.confirm("Vacate this allocation?", async () => {
+        try {
+          const alloc = await DB.findOne("allocations", r => Number(r.id) === id);
+          await DB.update("allocations", id, { status: "Vacated" });
+          const room = await DB.findOne("rooms", r => Number(r.id) === Number(alloc.room_id));
+          if (room) await DB.update("rooms", room.id, { occupied: Math.max(0, Number(room.occupied) - 1) });
+          Flash.push("Vacated.", "info");
+        } catch (err) { Flash.push(err.message, "danger"); }
+        route();
+      });
+    });
+  });
+
+  document.querySelectorAll("[data-del-room]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault();
+      try { AUTH.requireAdmin(); } catch (err) { return; }
+      const id = parseInt(el.getAttribute("data-del-room"), 10);
+      H.confirm("Delete room?", async () => {
+        try {
+          await DB.remove("rooms", id);
+          await DB.removeWhere("allocations", "room_id", id);
+          Flash.push("Deleted.", "info");
+        } catch (err) { Flash.push(err.message, "danger"); }
+        route();
+      });
+    });
+  });
+}
+
+/* ============================================================
+   ROUTER
+   ============================================================ */
+async function pageProfile() {
+  const session = await showAppShell("profile");
+  const profileName = session.full_name || session.username || "User";
+  const profileInitials = profileName.split(/\s+/).map(word => word[0]).join("").slice(0, 2).toUpperCase();
+  document.getElementById("pageContent").innerHTML = `
+    <h1 class="page-title">My Profile</h1>
+    <div class="card"><div class="card-body" style="text-align:center;">
+      <div class="profile-picture" style="width:88px;height:88px;flex-basis:88px;margin:0 auto 1rem;font-size:1.7rem;">${H.esc(profileInitials)}</div>
+      <h2>${H.esc(profileName)}</h2>
+      <p style="color:#c4b5fd;margin-bottom:1.5rem;">${H.esc((session.role || "user").toUpperCase())}</p>
+      <div class="form-grid" style="text-align:left;max-width:680px;margin:0 auto 1.25rem;">
+        <div class="form-group"><label>Username</label><input value="${H.esc(session.username || "-")}" readonly></div>
+        <div class="form-group"><label>Entry Time</label><input value="${H.esc(session.entry_time || "-")}" readonly></div>
+        <div class="form-group"><label>Current Time</label><input id="profileCurrentTime" value="${H.esc(new Date().toLocaleString())}" readonly></div>
+      </div>
+      <a class="btn btn-primary" href="#dashboard">Back to Dashboard</a>
+    </div></div>`;
+  if (window.umsProfileClockInterval) clearInterval(window.umsProfileClockInterval);
+  window.umsProfileClockInterval = setInterval(() => {
+    const clock = document.getElementById("profileCurrentTime");
+    if (clock) clock.value = new Date().toLocaleString();
+  }, 1000);
+}
+
+const PAGES = {
+  login: pageLogin,
+  signup: pageSignup,
+  profile: pageProfile,
+  dashboard: pageDashboard,
+  students: pageStudents,
+  faculty: pageFaculty,
+  courses: pageCourses,
+  enrollment: pageEnrollment,
+  fees: pageFees,
+  exams: pageExams,
+  library: pageLibrary,
+  hostel: pageHostel
+};
+
+async function route() {
+  const name = getRoute();
+  const fn = PAGES[name] || pageLogin;
+  try {
+    await fn();
+  } catch (e) {
+    if (e.message !== "redirect") {
+      console.error(e);
+      const app = document.getElementById("app");
+      if (app) {
+        app.innerHTML = `<div class="container"><div class="flash flash-danger">${H.esc(e.message)}</div>
+          <p><a href="#login">Back to login</a></p></div>`;
+      }
+    }
+  }
+}
+
+window.addEventListener("hashchange", route);
+
+/* ============================================================
+  AI ASSISTANT INTEGRATION (Google Apps Script proxy)
+  ============================================================ */
+
+function toggleAIChat() {
+  const chatBox = document.getElementById("ai-chat-box");
+  chatBox.style.display = (chatBox.style.display === "flex") ? "none" : "flex";
+}
+
+async function sendAIMessage() {
+  const inputEl = document.getElementById("aiInput");
+  const messagesContainer = document.getElementById("aiChatMessages");
+  const prompt = inputEl.value.trim();
+
+  if (!prompt) return;
+
+  // Render User Message
+  const userMsgDiv = document.createElement("div");
+  userMsgDiv.className = "ai-msg ai-msg-user";
+  userMsgDiv.textContent = prompt;
+  messagesContainer.appendChild(userMsgDiv);
+  inputEl.value = "";
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+  // Placeholder Response Loading Indicator
+  const botMsgDiv = document.createElement("div");
+  botMsgDiv.className = "ai-msg ai-msg-assistant";
+  botMsgDiv.textContent = "Thinking...";
+  messagesContainer.appendChild(botMsgDiv);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+  try {
+    const data = await DB.api("askai", { prompt: prompt });
+    botMsgDiv.textContent = data.reply || "Error: Unable to process request.";
+  } catch (err) {
+    botMsgDiv.textContent = err.message || "Connection error. Check the Apps Script deployment.";
+  }
+
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// Show config banner if URL not set
+if (!UMS_CONFIG.SCRIPT_URL || UMS_CONFIG.SCRIPT_URL.indexOf("PASTE_YOUR") !== -1) {
+  document.getElementById("configBanner").classList.remove("hidden");
+}
+
+AUTH.logout();
+if (location.hash !== "#login") location.hash = "#login";
+else route();
+</script>
+
+<!-- AI Assistant Chat UI -->
+<div id="ai-widget-container">
+  <div id="ai-chat-box">
+    <div class="ai-chat-header">
+      <span>🤖 UMS Assistant</span>
+      <button onclick="toggleAIChat()" style="background:none; border:none; color:white; cursor:pointer;">✕</button>
+    </div>
+    <div class="ai-chat-messages" id="aiChatMessages">
+      <div class="ai-msg ai-msg-assistant">Hello! How can I assist you with the University System today?</div>
+    </div>
+    <div class="ai-chat-input-area">
+      <input type="text" id="aiInput" placeholder="Ask a question..." onkeydown="if(event.key==='Enter') sendAIMessage()">
+      <button onclick="sendAIMessage()">Send</button>
+    </div>
+  </div>
+  <button id="ai-chat-button" onclick="toggleAIChat()">🤖</button>
+</div>
+</body>
+</html>
