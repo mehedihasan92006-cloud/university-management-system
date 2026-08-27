@@ -107,7 +107,6 @@
     .badge-success { background: #c6f6d5; color: #22543d; }
     .badge-warning { background: #feebc8; color: #744210; }
     .badge-danger { background: #fed7d7; color: #742a2a; }
-    /* Auth pages */
     .auth-wrap {
       display: flex; align-items: center; justify-content: center; min-height: 100vh;
       background: linear-gradient(135deg, #160d24 0%, #32145f 50%, #4c1d95 100%); animation: authBackgroundIn 0.8s ease-out both;
@@ -195,101 +194,101 @@
     .hidden { display: none !important; }
 
     /* AI Assistant Widget Styles */
-#ai-widget-container {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 9999;
-}
-#ai-chat-button {
-  width: 55px;
-  height: 55px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%);
-  color: #fff;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-#ai-chat-box {
-  display: none;
-  flex-direction: column;
-  width: 320px;
-  height: 420px;
-  background: #241936;
-  border: 1px solid #4c3a63;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-  overflow: hidden;
-  position: absolute;
-  bottom: 65px;
-  right: 0;
-}
-.ai-chat-header {
-  background: #302047;
-  padding: 0.75rem;
-  color: #f3f4f6;
-  font-weight: 600;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #4c3a63;
-}
-.ai-chat-messages {
-  flex: 1;
-  padding: 0.75rem;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-}
-.ai-msg {
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  max-width: 80%;
-  word-wrap: break-word;
-}
-.ai-msg-user {
-  background: #7c3aed;
-  color: #fff;
-  align-self: flex-end;
-}
-.ai-msg-assistant {
-  background: #160d24;
-  color: #e5e7eb;
-  border: 1px solid #4c3a63;
-  align-self: flex-start;
-}
-.ai-chat-input-area {
-  display: flex;
-  padding: 0.5rem;
-  background: #160d24;
-  border-top: 1px solid #4c3a63;
-}
-.ai-chat-input-area input {
-  flex: 1;
-  padding: 0.4rem 0.6rem;
-  background: #241936;
-  border: 1px solid #5b4674;
-  border-radius: 6px;
-  color: #fff;
-  font-size: 0.85rem;
-}
-.ai-chat-input-area button {
-  margin-left: 0.5rem;
-  padding: 0.4rem 0.8rem;
-  background: #7c3aed;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-</style>
+    #ai-widget-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 9999;
+    }
+    #ai-chat-button {
+      width: 55px;
+      height: 55px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%);
+      color: #fff;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #ai-chat-box {
+      display: none;
+      flex-direction: column;
+      width: 320px;
+      height: 420px;
+      background: #241936;
+      border: 1px solid #4c3a63;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      overflow: hidden;
+      position: absolute;
+      bottom: 65px;
+      right: 0;
+    }
+    .ai-chat-header {
+      background: #302047;
+      padding: 0.75rem;
+      color: #f3f4f6;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #4c3a63;
+    }
+    .ai-chat-messages {
+      flex: 1;
+      padding: 0.75rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+    }
+    .ai-msg {
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      max-width: 80%;
+      word-wrap: break-word;
+    }
+    .ai-msg-user {
+      background: #7c3aed;
+      color: #fff;
+      align-self: flex-end;
+    }
+    .ai-msg-assistant {
+      background: #160d24;
+      color: #e5e7eb;
+      border: 1px solid #4c3a63;
+      align-self: flex-start;
+    }
+    .ai-chat-input-area {
+      display: flex;
+      padding: 0.5rem;
+      background: #160d24;
+      border-top: 1px solid #4c3a63;
+    }
+    .ai-chat-input-area input {
+      flex: 1;
+      padding: 0.4rem 0.6rem;
+      background: #241936;
+      border: 1px solid #5b4674;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.85rem;
+    }
+    .ai-chat-input-area button {
+      margin-left: 0.5rem;
+      padding: 0.4rem 0.8rem;
+      background: #7c3aed;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
   <div id="umsLoading"><div class="box">Loading data…</div></div>
@@ -298,12 +297,30 @@
   </div>
   <div id="app"></div>
 
+  <!-- AI Assistant Widget -->
+  <div id="ai-widget-container">
+    <div id="ai-chat-box">
+      <div class="ai-chat-header">
+        <span>🤖 Gemini AI Support</span>
+        <button id="ai-chat-close" style="background:none; border:none; color:#fff; cursor:pointer; font-size:16px;">✕</button>
+      </div>
+      <div class="ai-chat-messages" id="ai-chat-messages">
+        <div class="ai-msg ai-msg-assistant">Hello! How can I assist you with your university records today?</div>
+      </div>
+      <form class="ai-chat-input-area" id="ai-chat-form">
+        <input type="text" id="ai-chat-input" placeholder="Ask a question..." required>
+        <button type="submit">Send</button>
+      </form>
+    </div>
+    <button id="ai-chat-button">🤖</button>
+  </div>
+
 <script>
 /* ============================================================
    CONFIG – paste your Google Apps Script Web App URL here
    ============================================================ */
 const UMS_CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbylMKPNEwi5d1swt9_PrV_WVMOT6RELgNKi4GilCWe5_g8sNilLJ6h2K8mOsIKfipv3GA/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbz7YZsdzDnXAnHoV7XJsIxPCYkvM_748MrHGFla5VtzvF3MasAcn8ZlPup3vPKaHf3z7A/exec",
   SHOW_LOADING: false
 };
 
@@ -327,6 +344,7 @@ const Flash = (() => {
     return messages;
   }
   function render(containerEl) {
+    if (!containerEl) return;
     const messages = consume();
     messages.forEach(([category, message]) => {
       const div = document.createElement("div");
@@ -483,6 +501,8 @@ const AUTH = (() => {
         email: res.user.email || usernameOrEmail,
         full_name: res.user.full_name || res.user.username,
         role: res.user.role,
+        student_id: res.user.student_id,
+        faculty_id: res.user.faculty_id,
         login_type: loginType || "administrative",
         entry_time: new Date().toLocaleString(),
         avatar_data: null
@@ -690,6 +710,7 @@ async function showAppShell(activeKey) {
     if (window.umsClockInterval) clearInterval(window.umsClockInterval);
     Flash.push("Logged out successfully. Exit time: " + exitTime, "success");
     location.hash = "#login";
+    route();
   });
   document.querySelector(".profile-picture").addEventListener("click", e => {
     e.preventDefault();
@@ -710,7 +731,7 @@ async function showAppShell(activeKey) {
    PAGES
    ============================================================ */
 async function pageLogin() {
-  if (AUTH.isLoggedIn()) { location.hash = "#dashboard"; return; }
+  if (AUTH.isLoggedIn()) { location.hash = "#dashboard"; route(); return; }
   document.getElementById("app").innerHTML = `
     <div class="auth-wrap"><div class="auth-box">
       <h1>🎓 Mehedi's University Management System</h1>
@@ -761,6 +782,7 @@ async function pageLogin() {
       if (result.ok) {
         Flash.push(timeGreeting() + ", welcome to Mehedi's University Management System!", "success");
         location.hash = "#dashboard";
+        route();
       } else {
         Flash.push(result.message || "Invalid username or password.", "danger");
         location.hash = "#login";
@@ -775,7 +797,7 @@ async function pageLogin() {
 }
 
 async function pageSignup() {
-  if (AUTH.isLoggedIn()) { location.hash = "#dashboard"; return; }
+  if (AUTH.isLoggedIn()) { location.hash = "#dashboard"; route(); return; }
   document.getElementById("app").innerHTML = `
     <div class="auth-wrap"><div class="auth-box">
       <h1>🎓 Create Account</h1>
@@ -792,18 +814,18 @@ async function pageSignup() {
         <div class="form-group"><label>Confirm Password *</label><input type="password" id="confirm_password" required></div>
         <button type="submit" class="btn btn-primary btn-full" id="signupBtn">Sign Up</button>
       </form>
-      <p class="demo-hint" id="signupHint">Enter any email. A Student/Faculty ID will be assigned automatically. (Admins can still pre-issue IDs from the ID Cards page if desired.)</p>
+      <p class="demo-hint" id="signupHint">Enter any email. A Student ID will be assigned automatically. (Admins can pre-issue IDs from the ID Cards page.)</p>
       <div class="auth-footer">Already have an account? <a href="#login">Sign In</a></div>
     </div></div>`;
   Flash.render(document.getElementById("flashArea"));
   const SIGNUP_TYPE_META = {
-  student: {
-    hint: "Enter any email. A Student ID will be assigned automatically. (Admins can pre-issue IDs from the ID Cards page.)"
-  },
-  faculty: {
-    hint: "Enter any email. A Faculty ID will be assigned automatically. (Admins can pre-issue IDs from the ID Cards page.)"
-  }
-};
+    student: {
+      hint: "Enter any email. A Student ID will be assigned automatically. (Admins can pre-issue IDs from the ID Cards page.)"
+    },
+    faculty: {
+      hint: "Enter any email. A Faculty ID will be assigned automatically. (Admins can pre-issue IDs from the ID Cards page.)"
+    }
+  };
 
   let selectedSignupType = "student";
   document.querySelectorAll("[data-signup-type]").forEach(typeButton => {
@@ -896,7 +918,7 @@ async function pageDashboard() {
   const pending = fees.filter(f => !(f.paid === true || f.paid === 1 || f.paid === "TRUE" || f.status === "Paid")).length;
   const recent = students.slice().sort((a, b) => b.id - a.id).slice(0, 5);
   const welcomeBanner = session.login_type === "administrative"
-    ? `<div class="welcome-banner">Welcome to System Administrator</div>`
+    ? `<div class="welcome-banner">Welcome System Administrator</div>`
     : "";
   const recentRows = recent.length
     ? `<table><thead><tr><th>Student ID</th><th>Name</th><th>Department</th><th>Year</th><th>Email</th></tr></thead><tbody>
@@ -928,7 +950,7 @@ async function pageDashboard() {
    ============================================================ */
 async function pageMyFees() {
   const session = await showAppShell("myfees");
-  if (!isStudentSession(session)) { location.hash = "#dashboard"; return; }
+  if (!isStudentSession(session)) { location.hash = "#dashboard"; route(); return; }
   const student = await getCurrentStudent(session);
   if (!student) {
     document.getElementById("pageContent").innerHTML = `<h1 class="page-title">My Fees</h1><div class="flash flash-warning">Student profile not found.</div>`;
@@ -973,7 +995,7 @@ async function pageMyFees() {
 
 async function pageMyIdCard() {
   const session = await showAppShell("myidcard");
-  if (!isStudentSession(session)) { location.hash = "#dashboard"; return; }
+  if (!isStudentSession(session)) { location.hash = "#dashboard"; route(); return; }
   const student = await getCurrentStudent(session);
   const cards = await DB.getTable("id_cards");
   const myCard = cards.find(c =>
@@ -1005,7 +1027,7 @@ async function pageMyIdCard() {
 
 async function pageAdmitCard() {
   const session = await showAppShell("admitcard");
-  if (!isStudentSession(session)) { location.hash = "#dashboard"; return; }
+  if (!isStudentSession(session)) { location.hash = "#dashboard"; route(); return; }
   const student = await getCurrentStudent(session);
   if (!student) {
     document.getElementById("pageContent").innerHTML = `<h1 class="page-title">Admit Card</h1><div class="flash flash-warning">Student profile not found.</div>`;
@@ -1451,15 +1473,10 @@ async function pageCourses() {
     e.preventDefault();
     try { AUTH.requireAdmin(); } catch (err) { return; }
     const f = e.target;
-    const course_code = f.course_code.value.trim();
-    if (await DB.findOne("courses", r => r.course_code === course_code)) {
-      Flash.push("Course code already exists.", "danger"); route(); return;
-    }
     try {
       await DB.insert("courses", {
-        course_code, title: f.title.value.trim(),
-        credits: parseInt(f.credits.value || "3", 10),
-        department: f.department.value.trim() || null,
+        course_code: f.course_code.value.trim(), title: f.title.value.trim(),
+        credits: parseInt(f.credits.value, 10) || 3, department: f.department.value.trim() || null,
         faculty_id: f.faculty_id.value ? parseInt(f.faculty_id.value, 10) : null,
         semester: f.semester.value.trim() || null
       });
@@ -1473,15 +1490,11 @@ async function pageCourses() {
       e.preventDefault();
       try { AUTH.requireAdmin(); } catch (err) { return; }
       const id = parseInt(el.getAttribute("data-del"), 10);
-      H.confirm("Delete this course?", async () => {
+      H.confirm("Delete this course and its enrollments?", async () => {
         try {
           await DB.remove("courses", id);
           await DB.removeWhere("enrollments", "course_id", id);
-          const exams = await DB.findAll("exams", r => Number(r.course_id) === id);
-          for (const ex of exams) {
-            await DB.removeWhere("results", "exam_id", ex.id);
-            await DB.remove("exams", ex.id);
-          }
+          await DB.removeWhere("exams", "course_id", id);
           Flash.push("Course deleted.", "info");
         } catch (err) { Flash.push(err.message, "danger"); }
         route();
@@ -1492,30 +1505,37 @@ async function pageCourses() {
 
 async function pageEnrollment() {
   await showAppShell("enrollment");
-  const [students, courses, enrollments] = await Promise.all([
-    DB.getTable("students"), DB.getTable("courses"), DB.getTable("enrollments")
+  const [enrollments, students, courses] = await Promise.all([
+    DB.getTable("enrollments"), DB.getTable("students"), DB.getTable("courses")
   ]);
   enrollments.sort((a, b) => b.id - a.id);
+  const studentMap = new Map(students.map(s => [Number(s.id), s]));
+  const courseMap = new Map(courses.map(c => [Number(c.id), c]));
+
   const studentOpts = students.map(s => `<option value="${s.id}">${H.esc(H.studentLabel(s))}</option>`).join("");
   const courseOpts = courses.map(c => `<option value="${c.id}">${H.esc(H.courseLabel(c))}</option>`).join("");
+
   const rows = enrollments.length
     ? `<table><thead><tr><th>ID</th><th>Student</th><th>Course</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody>
        ${enrollments.map(e => {
-         const s = students.find(r => Number(r.id) === Number(e.student_id)) || {};
-         const c = courses.find(r => Number(r.id) === Number(e.course_id)) || {};
-         return `<tr><td>${e.id}</td><td>${H.esc(H.studentLabel(s))}</td><td>${H.esc(H.courseLabel(c))}</td>
-           <td>${H.esc(e.enroll_date)}</td><td>${H.esc(e.status || "Active")}</td>
+         const s = studentMap.get(Number(e.student_id));
+         const c = courseMap.get(Number(e.course_id));
+         return `<tr>
+           <td>${e.id}</td><td>${H.esc(s ? H.studentLabel(s) : e.student_id)}</td>
+           <td>${H.esc(c ? H.courseLabel(c) : e.course_id)}</td>
+           <td>${H.esc(e.enroll_date)}</td><td>${H.badge(e.status || "Active", e.status === "Dropped" ? "danger" : "success")}</td>
            <td><a href="#" class="btn btn-danger" data-del="${e.id}">Delete</a></td></tr>`;
        }).join("")}
        </tbody></table>`
     : `<p class="empty">No enrollments yet.</p>`;
 
   document.getElementById("pageContent").innerHTML = `
-    <h1 class="page-title">Enrollment</h1>
-    <div class="card"><div class="card-header">Enroll Student</div><div class="card-body">
+    <h1 class="page-title">Course Enrollment</h1>
+    <div class="card"><div class="card-header">Enroll Student in Course</div><div class="card-body">
       <form id="addForm"><div class="form-grid">
-        <div class="form-group"><label>Student *</label><select name="student_id" required><option value="">—</option>${studentOpts}</select></div>
-        <div class="form-group"><label>Course *</label><select name="course_id" required><option value="">—</option>${courseOpts}</select></div>
+        <div class="form-group"><label>Student *</label><select name="student_id" required><option value="">Select Student</option>${studentOpts}</select></div>
+        <div class="form-group"><label>Course *</label><select name="course_id" required><option value="">Select Course</option>${courseOpts}</select></div>
+        <div class="form-group"><label>Status</label><select name="status"><option>Active</option><option>Completed</option><option>Dropped</option></select></div>
       </div><button type="submit" class="btn btn-primary">Enroll</button></form>
     </div></div>
     <div class="card"><div class="card-header">All Enrollments (${enrollments.length})</div>
@@ -1528,11 +1548,11 @@ async function pageEnrollment() {
     const student_id = parseInt(f.student_id.value, 10);
     const course_id = parseInt(f.course_id.value, 10);
     if (await DB.findOne("enrollments", r => Number(r.student_id) === student_id && Number(r.course_id) === course_id)) {
-      Flash.push("Already enrolled.", "danger"); route(); return;
+      Flash.push("Student is already enrolled in this course.", "danger"); route(); return;
     }
     try {
-      await DB.insert("enrollments", { student_id, course_id, enroll_date: DB.today(), status: "Active" });
-      Flash.push("Enrolled.", "success");
+      await DB.insert("enrollments", { student_id, course_id, enroll_date: DB.today(), status: f.status.value });
+      Flash.push("Student enrolled.", "success");
     } catch (err) { Flash.push(err.message, "danger"); }
     route();
   });
@@ -1542,8 +1562,8 @@ async function pageEnrollment() {
       e.preventDefault();
       try { AUTH.requireAdmin(); } catch (err) { return; }
       const id = parseInt(el.getAttribute("data-del"), 10);
-      H.confirm("Remove enrollment?", async () => {
-        try { await DB.remove("enrollments", id); Flash.push("Removed.", "info"); }
+      H.confirm("Delete enrollment?", async () => {
+        try { await DB.remove("enrollments", id); Flash.push("Enrollment deleted.", "info"); }
         catch (err) { Flash.push(err.message, "danger"); }
         route();
       });
@@ -1553,35 +1573,41 @@ async function pageEnrollment() {
 
 async function pageFees() {
   await showAppShell("fees");
-  const isPaid = f => f.paid === true || f.paid === 1 || f.paid === "TRUE" || f.paid === "true" || f.status === "Paid";
-  const [students, fees] = await Promise.all([DB.getTable("students"), DB.getTable("fees")]);
+  const [fees, students] = await Promise.all([DB.getTable("fees"), DB.getTable("students")]);
   fees.sort((a, b) => b.id - a.id);
+  const studentMap = new Map(students.map(s => [Number(s.id), s]));
   const studentOpts = students.map(s => `<option value="${s.id}">${H.esc(H.studentLabel(s))}</option>`).join("");
+  const isPaid = f => f.paid === true || f.paid === 1 || f.paid === "TRUE" || f.paid === "true" || f.status === "Paid";
+
   const rows = fees.length
-    ? `<table><thead><tr><th>ID</th><th>Student</th><th>Amount</th><th>Type</th><th>Due</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+    ? `<table><thead><tr><th>ID</th><th>Student</th><th>Type</th><th>Amount</th><th>Due Date</th><th>Status</th><th>Paid Date</th><th>Actions</th></tr></thead><tbody>
        ${fees.map(f => {
-         const s = students.find(r => Number(r.id) === Number(f.student_id)) || {};
+         const s = studentMap.get(Number(f.student_id));
          const paid = isPaid(f);
-         return `<tr><td>${f.id}</td><td>${H.esc(H.studentLabel(s))}</td><td>${H.money(f.amount)}</td>
-           <td>${H.esc(f.fee_type)}</td><td>${H.esc(f.due_date)}</td>
-           <td>${paid ? H.badge("Paid", "success") : H.badge("Pending", "warning")}</td>
-           <td>${!paid ? `<a href="#" class="btn btn-primary" data-pay="${f.id}">Mark Paid</a> ` : ""}
-               <a href="#" class="btn btn-danger" data-del="${f.id}">Delete</a></td></tr>`;
+         return `<tr>
+           <td>${f.id}</td><td>${H.esc(s ? H.studentLabel(s) : f.student_id)}</td>
+           <td>${H.esc(f.fee_type)}</td><td>$${H.money(f.amount)}</td>
+           <td>${H.esc(f.due_date)}</td><td>${paid ? H.badge("Paid", "success") : H.badge("Pending", "warning")}</td>
+           <td>${H.esc(f.paid_date)}</td>
+           <td>
+             ${!paid ? `<a href="#" class="btn btn-primary" data-pay="${f.id}" style="margin-right:0.3rem;">Mark Paid</a>` : ""}
+             <a href="#" class="btn btn-danger" data-del="${f.id}">Delete</a>
+           </td></tr>`;
        }).join("")}
        </tbody></table>`
-    : `<p class="empty">No fees yet.</p>`;
+    : `<p class="empty">No fee records yet.</p>`;
 
   document.getElementById("pageContent").innerHTML = `
-    <h1 class="page-title">Fees</h1>
-    <div class="card"><div class="card-header">Add Fee</div><div class="card-body">
+    <h1 class="page-title">Fee Management</h1>
+    <div class="card"><div class="card-header">Add Fee Record</div><div class="card-body">
       <form id="addForm"><div class="form-grid">
-        <div class="form-group"><label>Student *</label><select name="student_id" required><option value="">—</option>${studentOpts}</select></div>
-        <div class="form-group"><label>Amount *</label><input name="amount" type="number" step="0.01" min="0" required></div>
-        <div class="form-group"><label>Fee Type</label><input name="fee_type" placeholder="Tuition"></div>
+        <div class="form-group"><label>Student *</label><select name="student_id" required><option value="">Select Student</option>${studentOpts}</select></div>
+        <div class="form-group"><label>Fee Type *</label><input name="fee_type" required placeholder="Tuition, Hostel, Exam..."></div>
+        <div class="form-group"><label>Amount ($) *</label><input name="amount" type="number" step="0.01" required></div>
         <div class="form-group"><label>Due Date</label><input name="due_date" type="date"></div>
-      </div><button type="submit" class="btn btn-primary">Add Fee</button></form>
+      </div><button type="submit" class="btn btn-primary">Add Fee Record</button></form>
     </div></div>
-    <div class="card"><div class="card-header">All Fees (${fees.length})</div>
+    <div class="card"><div class="card-header">All Fee Records (${fees.length})</div>
     <div class="card-body table-wrap">${rows}</div></div>`;
 
   document.getElementById("addForm").addEventListener("submit", async e => {
@@ -1590,25 +1616,27 @@ async function pageFees() {
     const f = e.target;
     try {
       await DB.insert("fees", {
-        student_id: parseInt(f.student_id.value, 10),
-        amount: parseFloat(f.amount.value),
-        fee_type: f.fee_type.value.trim() || null,
-        due_date: f.due_date.value || null, paid: false, paid_date: null, created_at: DB.today()
+        student_id: parseInt(f.student_id.value, 10), fee_type: f.fee_type.value.trim(),
+        amount: parseFloat(f.amount.value), due_date: f.due_date.value || null,
+        paid: false, paid_date: null, created_at: DB.today()
       });
-      Flash.push("Fee added.", "success");
+      Flash.push("Fee record added.", "success");
     } catch (err) { Flash.push(err.message, "danger"); }
     route();
   });
 
   document.querySelectorAll("[data-pay]").forEach(el => {
-    el.addEventListener("click", async e => {
+    el.addEventListener("click", e => {
       e.preventDefault();
       try { AUTH.requireAdmin(); } catch (err) { return; }
-      try {
-        await DB.update("fees", parseInt(el.getAttribute("data-pay"), 10), { paid: true, paid_date: DB.today() });
-        Flash.push("Marked paid.", "success");
-      } catch (err) { Flash.push(err.message, "danger"); }
-      route();
+      const id = parseInt(el.getAttribute("data-pay"), 10);
+      H.confirm("Mark this fee as paid?", async () => {
+        try {
+          await DB.update("fees", id, { paid: true, paid_date: DB.today() });
+          Flash.push("Fee marked as paid.", "success");
+        } catch (err) { Flash.push(err.message, "danger"); }
+        route();
+      });
     });
   });
 
@@ -1617,8 +1645,8 @@ async function pageFees() {
       e.preventDefault();
       try { AUTH.requireAdmin(); } catch (err) { return; }
       const id = parseInt(el.getAttribute("data-del"), 10);
-      H.confirm("Delete fee?", async () => {
-        try { await DB.remove("fees", id); Flash.push("Deleted.", "info"); }
+      H.confirm("Delete fee record?", async () => {
+        try { await DB.remove("fees", id); Flash.push("Fee record deleted.", "info"); }
         catch (err) { Flash.push(err.message, "danger"); }
         route();
       });
@@ -1628,59 +1656,69 @@ async function pageFees() {
 
 async function pageExams() {
   await showAppShell("exams");
-  const [courses, students, examsList, results] = await Promise.all([
-    DB.getTable("courses"), DB.getTable("students"), DB.getTable("exams"), DB.getTable("results")
+  const [exams, courses, results, students] = await Promise.all([
+    DB.getTable("exams"), DB.getTable("courses"), DB.getTable("results"), DB.getTable("students")
   ]);
-  examsList.sort((a, b) => b.id - a.id);
-  results.sort((a, b) => b.id - a.id);
-  const courseOpts = courses.map(c => `<option value="${c.id}">${H.esc(H.courseLabel(c))}</option>`).join("");
-  const studentOpts = students.map(s => `<option value="${s.id}">${H.esc(H.studentLabel(s))}</option>`).join("");
-  const examOpts = examsList.map(e => {
-    const c = courses.find(r => Number(r.id) === Number(e.course_id)) || {};
-    return `<option value="${e.id}">${H.esc(e.exam_name)} (${H.esc(c.course_code || "")})</option>`;
-  }).join("");
+  exams.sort((a, b) => b.id - a.id);
+  const courseMap = new Map(courses.map(c => [Number(c.id), c]));
+  const studentMap = new Map(students.map(s => [Number(s.id), s]));
+  const examMap = new Map(exams.map(x => [Number(x.id), x]));
 
-  const examRows = examsList.length
-    ? `<table><thead><tr><th>ID</th><th>Exam</th><th>Course</th><th>Date</th><th>Max</th><th>Actions</th></tr></thead><tbody>
-       ${examsList.map(e => {
-         const c = courses.find(r => Number(r.id) === Number(e.course_id)) || {};
-         return `<tr><td>${e.id}</td><td>${H.esc(e.exam_name)}</td><td>${H.esc(c.course_code)}</td>
-           <td>${H.esc(e.exam_date)}</td><td>${H.esc(e.max_marks)}</td>
-           <td><a href="#" class="btn btn-danger" data-del-exam="${e.id}">Delete</a></td></tr>`;
+  const courseOpts = courses.map(c => `<option value="${c.id}">${H.esc(H.courseLabel(c))}</option>`).join("");
+  const examOpts = exams.map(x => {
+    const c = courseMap.get(Number(x.course_id));
+    return `<option value="${x.id}">${H.esc(x.exam_name)} (${c ? H.esc(c.course_code) : ""})</option>`;
+  }).join("");
+  const studentOpts = students.map(s => `<option value="${s.id}">${H.esc(H.studentLabel(s))}</option>`).join("");
+
+  const examRows = exams.length
+    ? `<table><thead><tr><th>ID</th><th>Course</th><th>Exam Name</th><th>Date</th><th>Max Marks</th><th>Actions</th></tr></thead><tbody>
+       ${exams.map(x => {
+         const c = courseMap.get(Number(x.course_id));
+         return `<tr>
+           <td>${x.id}</td><td>${H.esc(c ? H.courseLabel(c) : x.course_id)}</td>
+           <td>${H.esc(x.exam_name)}</td><td>${H.esc(x.exam_date)}</td><td>${x.max_marks}</td>
+           <td><a href="#" class="btn btn-danger" data-del-exam="${x.id}">Delete</a></td></tr>`;
        }).join("")}
        </tbody></table>`
-    : `<p class="empty">No exams yet.</p>`;
+    : `<p class="empty">No exams scheduled.</p>`;
 
   const resultRows = results.length
-    ? `<table><thead><tr><th>ID</th><th>Exam</th><th>Student</th><th>Marks</th><th>Grade</th></tr></thead><tbody>
+    ? `<table><thead><tr><th>ID</th><th>Exam</th><th>Student</th><th>Marks Obtained</th><th>Grade</th><th>Actions</th></tr></thead><tbody>
        ${results.map(r => {
-         const ex = examsList.find(row => Number(row.id) === Number(r.exam_id)) || {};
-         const s = students.find(row => Number(row.id) === Number(r.student_id)) || {};
-         return `<tr><td>${r.id}</td><td>${H.esc(ex.exam_name)}</td><td>${H.esc(H.studentLabel(s))}</td>
-           <td>${H.esc(r.marks_obtained)} / ${H.esc(ex.max_marks)}</td><td>${H.esc(r.grade)}</td></tr>`;
+         const x = examMap.get(Number(r.exam_id));
+         const s = studentMap.get(Number(r.student_id));
+         return `<tr>
+           <td>${r.id}</td><td>${H.esc(x ? x.exam_name : r.exam_id)}</td>
+           <td>${H.esc(s ? H.studentLabel(s) : r.student_id)}</td>
+           <td>${r.marks_obtained} / ${x ? x.max_marks : "—"}</td>
+           <td><strong>${H.esc(r.grade)}</strong></td>
+           <td><a href="#" class="btn btn-danger" data-del-res="${r.id}">Delete</a></td></tr>`;
        }).join("")}
        </tbody></table>`
-    : `<p class="empty">No results yet.</p>`;
+    : `<p class="empty">No exam results entered.</p>`;
 
   document.getElementById("pageContent").innerHTML = `
     <h1 class="page-title">Exams & Results</h1>
-    <div class="card"><div class="card-header">Add Exam</div><div class="card-body">
+    <div class="card"><div class="card-header">Schedule New Exam</div><div class="card-body">
       <form id="addExamForm"><div class="form-grid">
-        <div class="form-group"><label>Course *</label><select name="course_id" required><option value="">—</option>${courseOpts}</select></div>
-        <div class="form-group"><label>Exam Name *</label><input name="exam_name" required placeholder="Midterm"></div>
-        <div class="form-group"><label>Date</label><input name="exam_date" type="date"></div>
-        <div class="form-group"><label>Max Marks</label><input name="max_marks" type="number" value="100" min="1"></div>
-      </div><button type="submit" class="btn btn-primary">Add Exam</button></form>
+        <div class="form-group"><label>Course *</label><select name="course_id" required><option value="">Select Course</option>${courseOpts}</select></div>
+        <div class="form-group"><label>Exam Name *</label><input name="exam_name" required placeholder="Midterm, Final..."></div>
+        <div class="form-group"><label>Exam Date</label><input name="exam_date" type="date"></div>
+        <div class="form-group"><label>Max Marks *</label><input name="max_marks" type="number" value="100" min="1" required></div>
+      </div><button type="submit" class="btn btn-primary">Create Exam</button></form>
     </div></div>
-    <div class="card"><div class="card-header">Record Result</div><div class="card-body">
+    
+    <div class="card"><div class="card-header">Enter Student Result</div><div class="card-body">
       <form id="addResultForm"><div class="form-grid">
-        <div class="form-group"><label>Exam *</label><select name="exam_id" required><option value="">—</option>${examOpts}</select></div>
-        <div class="form-group"><label>Student *</label><select name="student_id" required><option value="">—</option>${studentOpts}</select></div>
-        <div class="form-group"><label>Marks *</label><input name="marks_obtained" type="number" required min="0"></div>
+        <div class="form-group"><label>Exam *</label><select name="exam_id" required><option value="">Select Exam</option>${examOpts}</select></div>
+        <div class="form-group"><label>Student *</label><select name="student_id" required><option value="">Select Student</option>${studentOpts}</select></div>
+        <div class="form-group"><label>Marks Obtained *</label><input name="marks_obtained" type="number" step="0.5" required min="0"></div>
       </div><button type="submit" class="btn btn-primary">Save Result</button></form>
     </div></div>
-    <div class="card"><div class="card-header">Exams (${examsList.length})</div><div class="card-body table-wrap">${examRows}</div></div>
-    <div class="card"><div class="card-header">Results (${results.length})</div><div class="card-body table-wrap">${resultRows}</div></div>`;
+
+    <div class="card"><div class="card-header">Scheduled Exams (${exams.length})</div><div class="card-body table-wrap">${examRows}</div></div>
+    <div class="card"><div class="card-header">Recorded Results (${results.length})</div><div class="card-body table-wrap">${resultRows}</div></div>`;
 
   document.getElementById("addExamForm").addEventListener("submit", async e => {
     e.preventDefault();
@@ -1688,12 +1726,10 @@ async function pageExams() {
     const f = e.target;
     try {
       await DB.insert("exams", {
-        course_id: parseInt(f.course_id.value, 10),
-        exam_name: f.exam_name.value.trim(),
-        exam_date: f.exam_date.value || null,
-        max_marks: parseInt(f.max_marks.value || "100", 10)
+        course_id: parseInt(f.course_id.value, 10), exam_name: f.exam_name.value.trim(),
+        exam_date: f.exam_date.value || null, max_marks: parseInt(f.max_marks.value, 10) || 100
       });
-      Flash.push("Exam added.", "success");
+      Flash.push("Exam created.", "success");
     } catch (err) { Flash.push(err.message, "danger"); }
     route();
   });
@@ -1705,14 +1741,13 @@ async function pageExams() {
     const exam_id = parseInt(f.exam_id.value, 10);
     const student_id = parseInt(f.student_id.value, 10);
     const marks = parseFloat(f.marks_obtained.value);
-    if (await DB.findOne("results", r => Number(r.exam_id) === exam_id && Number(r.student_id) === student_id)) {
-      Flash.push("Result already exists.", "danger"); route(); return;
-    }
-    const exam = await DB.findOne("exams", r => Number(r.id) === exam_id);
-    const grade = calcGrade(marks, exam ? Number(exam.max_marks) : 100);
+    const exam = examMap.get(exam_id);
+    const max = exam ? Number(exam.max_marks) : 100;
+    const grade = calcGrade(marks, max);
+
     try {
       await DB.insert("results", { exam_id, student_id, marks_obtained: marks, grade });
-      Flash.push("Result saved (Grade: " + grade + ").", "success");
+      Flash.push("Result recorded.", "success");
     } catch (err) { Flash.push(err.message, "danger"); }
     route();
   });
@@ -1722,12 +1757,25 @@ async function pageExams() {
       e.preventDefault();
       try { AUTH.requireAdmin(); } catch (err) { return; }
       const id = parseInt(el.getAttribute("data-del-exam"), 10);
-      H.confirm("Delete exam and results?", async () => {
+      H.confirm("Delete exam and related results?", async () => {
         try {
-          await DB.removeWhere("results", "exam_id", id);
           await DB.remove("exams", id);
+          await DB.removeWhere("results", "exam_id", id);
           Flash.push("Exam deleted.", "info");
         } catch (err) { Flash.push(err.message, "danger"); }
+        route();
+      });
+    });
+  });
+
+  document.querySelectorAll("[data-del-res]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault();
+      try { AUTH.requireAdmin(); } catch (err) { return; }
+      const id = parseInt(el.getAttribute("data-del-res"), 10);
+      H.confirm("Delete result?", async () => {
+        try { await DB.remove("results", id); Flash.push("Result deleted.", "info"); }
+        catch (err) { Flash.push(err.message, "danger"); }
         route();
       });
     });
@@ -1736,111 +1784,128 @@ async function pageExams() {
 
 async function pageLibrary() {
   await showAppShell("library");
-  const [students, books, issues] = await Promise.all([
-    DB.getTable("students"), DB.getTable("books"), DB.getTable("issues")
+  const [books, issues, students] = await Promise.all([
+    DB.getTable("books"), DB.getTable("issues"), DB.getTable("students")
   ]);
   books.sort((a, b) => b.id - a.id);
   issues.sort((a, b) => b.id - a.id);
-  const available = books.filter(b => Number(b.available_copies) > 0);
+  const bookMap = new Map(books.map(b => [Number(b.id), b]));
+  const studentMap = new Map(students.map(s => [Number(s.id), s]));
+
+  const bookOpts = books.filter(b => Number(b.available_copies) > 0)
+    .map(b => `<option value="${b.id}">${H.esc(b.title)} (Available: ${b.available_copies})</option>`).join("");
   const studentOpts = students.map(s => `<option value="${s.id}">${H.esc(H.studentLabel(s))}</option>`).join("");
-  const bookOpts = available.map(b =>
-    `<option value="${b.id}">${H.esc(b.title)} – ${b.available_copies} left</option>`
-  ).join("");
 
   const bookRows = books.length
-    ? `<table><thead><tr><th>ID</th><th>ISBN</th><th>Title</th><th>Author</th><th>Category</th><th>Total</th><th>Available</th><th>Actions</th></tr></thead><tbody>
+    ? `<table><thead><tr><th>ID</th><th>ISBN</th><th>Title</th><th>Author</th><th>Category</th><th>Copies (Total/Avail)</th><th>Actions</th></tr></thead><tbody>
        ${books.map(b => `<tr>
-         <td>${b.id}</td><td>${H.esc(b.isbn)}</td><td>${H.esc(b.title)}</td><td>${H.esc(b.author)}</td>
-         <td>${H.esc(b.category)}</td><td>${H.esc(b.total_copies)}</td><td>${H.esc(b.available_copies)}</td>
+         <td>${b.id}</td><td>${H.esc(b.isbn)}</td><td>${H.esc(b.title)}</td>
+         <td>${H.esc(b.author)}</td><td>${H.esc(b.category)}</td>
+         <td>${b.total_copies} / <strong>${b.available_copies}</strong></td>
          <td><a href="#" class="btn btn-danger" data-del-book="${b.id}">Delete</a></td></tr>`).join("")}
        </tbody></table>`
-    : `<p class="empty">No books yet.</p>`;
+    : `<p class="empty">No books in library.</p>`;
 
   const issueRows = issues.length
-    ? `<table><thead><tr><th>ID</th><th>Book</th><th>Student</th><th>Issue</th><th>Due</th><th>Return</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+    ? `<table><thead><tr><th>ID</th><th>Book</th><th>Student</th><th>Issue Date</th><th>Due Date</th><th>Return Date</th><th>Status</th><th>Actions</th></tr></thead><tbody>
        ${issues.map(i => {
-         const b = books.find(r => Number(r.id) === Number(i.book_id)) || {};
-         const s = students.find(r => Number(r.id) === Number(i.student_id)) || {};
-         const active = (i.status || "Issued") !== "Returned";
-         return `<tr><td>${i.id}</td><td>${H.esc(b.title)}</td><td>${H.esc(H.studentLabel(s))}</td>
+         const b = bookMap.get(Number(i.book_id));
+         const s = studentMap.get(Number(i.student_id));
+         const isIssued = i.status === "Issued";
+         return `<tr>
+           <td>${i.id}</td><td>${H.esc(b ? b.title : i.book_id)}</td>
+           <td>${H.esc(s ? H.studentLabel(s) : i.student_id)}</td>
            <td>${H.esc(i.issue_date)}</td><td>${H.esc(i.due_date)}</td><td>${H.esc(i.return_date)}</td>
-           <td>${active ? H.badge("Issued", "warning") : H.badge("Returned", "success")}</td>
-           <td>${active ? `<a href="#" class="btn btn-primary" data-return="${i.id}">Return</a>` : "—"}</td></tr>`;
+           <td>${H.badge(i.status || "Issued", isIssued ? "warning" : "success")}</td>
+           <td>
+             ${isIssued ? `<a href="#" class="btn btn-primary" data-return="${i.id}" style="margin-right:0.3rem;">Return</a>` : ""}
+             <a href="#" class="btn btn-danger" data-del-issue="${i.id}">Delete</a>
+           </td></tr>`;
        }).join("")}
        </tbody></table>`
-    : `<p class="empty">No issues yet.</p>`;
+    : `<p class="empty">No book checkout records.</p>`;
 
   document.getElementById("pageContent").innerHTML = `
-    <h1 class="page-title">Library</h1>
-    <div class="card"><div class="card-header">Add Book</div><div class="card-body">
+    <h1 class="page-title">Library Management</h1>
+    <div class="card"><div class="card-header">Add New Book</div><div class="card-body">
       <form id="addBookForm"><div class="form-grid">
-        <div class="form-group"><label>ISBN</label><input name="isbn"></div>
+        <div class="form-group"><label>ISBN</label><input name="isbn" placeholder="978-..."></div>
         <div class="form-group"><label>Title *</label><input name="title" required></div>
         <div class="form-group"><label>Author</label><input name="author"></div>
         <div class="form-group"><label>Category</label><input name="category"></div>
-        <div class="form-group"><label>Copies</label><input name="total_copies" type="number" value="1" min="1"></div>
+        <div class="form-group"><label>Total Copies *</label><input name="total_copies" type="number" value="1" min="1" required></div>
       </div><button type="submit" class="btn btn-primary">Add Book</button></form>
     </div></div>
-    <div class="card"><div class="card-header">Issue Book</div><div class="card-body">
-      <form id="issueForm"><div class="form-grid">
-        <div class="form-group"><label>Book *</label><select name="book_id" required><option value="">—</option>${bookOpts}</select></div>
-        <div class="form-group"><label>Student *</label><select name="student_id" required><option value="">—</option>${studentOpts}</select></div>
-        <div class="form-group"><label>Due Date</label><input name="due_date" type="date"></div>
-      </div><button type="submit" class="btn btn-primary">Issue</button></form>
+
+    <div class="card"><div class="card-header">Issue Book to Student</div><div class="card-body">
+      <form id="issueBookForm"><div class="form-grid">
+        <div class="form-group"><label>Book *</label><select name="book_id" required><option value="">Select Book</option>${bookOpts}</select></div>
+        <div class="form-group"><label>Student *</label><select name="student_id" required><option value="">Select Student</option>${studentOpts}</select></div>
+        <div class="form-group"><label>Due Date *</label><input name="due_date" type="date" required></div>
+      </div><button type="submit" class="btn btn-primary">Issue Book</button></form>
     </div></div>
-    <div class="card"><div class="card-header">Books (${books.length})</div><div class="card-body table-wrap">${bookRows}</div></div>
-    <div class="card"><div class="card-header">Issues (${issues.length})</div><div class="card-body table-wrap">${issueRows}</div></div>`;
+
+    <div class="card"><div class="card-header">Book Inventory (${books.length})</div><div class="card-body table-wrap">${bookRows}</div></div>
+    <div class="card"><div class="card-header">Issued Books Log (${issues.length})</div><div class="card-body table-wrap">${issueRows}</div></div>`;
 
   document.getElementById("addBookForm").addEventListener("submit", async e => {
     e.preventDefault();
     try { AUTH.requireAdmin(); } catch (err) { return; }
     const f = e.target;
-    const total = parseInt(f.total_copies.value || "1", 10);
+    const copies = parseInt(f.total_copies.value, 10) || 1;
     try {
       await DB.insert("books", {
         isbn: f.isbn.value.trim() || null, title: f.title.value.trim(),
         author: f.author.value.trim() || null, category: f.category.value.trim() || null,
-        total_copies: total, available_copies: total
+        total_copies: copies, available_copies: copies
       });
       Flash.push("Book added.", "success");
     } catch (err) { Flash.push(err.message, "danger"); }
     route();
   });
 
-  document.getElementById("issueForm").addEventListener("submit", async e => {
+  document.getElementById("issueBookForm").addEventListener("submit", async e => {
     e.preventDefault();
     try { AUTH.requireAdmin(); } catch (err) { return; }
     const f = e.target;
     const book_id = parseInt(f.book_id.value, 10);
     const student_id = parseInt(f.student_id.value, 10);
-    const book = await DB.findOne("books", r => Number(r.id) === book_id);
-    if (!book || Number(book.available_copies) < 1) {
-      Flash.push("Book not available.", "danger"); route(); return;
+    const book = bookMap.get(book_id);
+
+    if (!book || Number(book.available_copies) <= 0) {
+      Flash.push("Book is not available for issue.", "danger"); route(); return;
     }
+
     try {
       await DB.insert("issues", {
-        book_id, student_id, issue_date: DB.today(),
-        due_date: f.due_date.value || null, return_date: null, status: "Issued"
+        book_id, student_id, issue_date: DB.today(), due_date: f.due_date.value,
+        return_date: null, status: "Issued"
       });
       await DB.update("books", book_id, { available_copies: Number(book.available_copies) - 1 });
-      Flash.push("Book issued.", "success");
+      Flash.push("Book issued to student.", "success");
     } catch (err) { Flash.push(err.message, "danger"); }
     route();
   });
 
   document.querySelectorAll("[data-return]").forEach(el => {
-    el.addEventListener("click", async e => {
+    el.addEventListener("click", e => {
       e.preventDefault();
       try { AUTH.requireAdmin(); } catch (err) { return; }
       const id = parseInt(el.getAttribute("data-return"), 10);
-      try {
-        const issue = await DB.findOne("issues", r => Number(r.id) === id);
-        await DB.update("issues", id, { status: "Returned", return_date: DB.today() });
-        const book = await DB.findOne("books", r => Number(r.id) === Number(issue.book_id));
-        if (book) await DB.update("books", book.id, { available_copies: Number(book.available_copies) + 1 });
-        Flash.push("Returned.", "success");
-      } catch (err) { Flash.push(err.message, "danger"); }
-      route();
+      H.confirm("Process book return?", async () => {
+        try {
+          const issue = await DB.findOne("issues", i => Number(i.id) === id);
+          if (issue && issue.status === "Issued") {
+            await DB.update("issues", id, { status: "Returned", return_date: DB.today() });
+            const book = bookMap.get(Number(issue.book_id));
+            if (book) {
+              await DB.update("books", book.id, { available_copies: Math.min(Number(book.total_copies), Number(book.available_copies) + 1) });
+            }
+            Flash.push("Book returned successfully.", "success");
+          }
+        } catch (err) { Flash.push(err.message, "danger"); }
+        route();
+      });
     });
   });
 
@@ -1849,12 +1914,25 @@ async function pageLibrary() {
       e.preventDefault();
       try { AUTH.requireAdmin(); } catch (err) { return; }
       const id = parseInt(el.getAttribute("data-del-book"), 10);
-      H.confirm("Delete book?", async () => {
+      H.confirm("Delete book and all its issue history?", async () => {
         try {
           await DB.remove("books", id);
           await DB.removeWhere("issues", "book_id", id);
-          Flash.push("Deleted.", "info");
+          Flash.push("Book deleted.", "info");
         } catch (err) { Flash.push(err.message, "danger"); }
+        route();
+      });
+    });
+  });
+
+  document.querySelectorAll("[data-del-issue]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault();
+      try { AUTH.requireAdmin(); } catch (err) { return; }
+      const id = parseInt(el.getAttribute("data-del-issue"), 10);
+      H.confirm("Delete issue log record?", async () => {
+        try { await DB.remove("issues", id); Flash.push("Record deleted.", "info"); }
+        catch (err) { Flash.push(err.message, "danger"); }
         route();
       });
     });
@@ -1863,73 +1941,80 @@ async function pageLibrary() {
 
 async function pageHostel() {
   await showAppShell("hostel");
-  const [rooms, students, allocations] = await Promise.all([
-    DB.getTable("rooms"), DB.getTable("students"), DB.getTable("allocations")
+  const [rooms, allocations, students] = await Promise.all([
+    DB.getTable("rooms"), DB.getTable("allocations"), DB.getTable("students")
   ]);
-  rooms.sort((a, b) => String(a.room_number).localeCompare(String(b.room_number)));
+  rooms.sort((a, b) => b.id - a.id);
   allocations.sort((a, b) => b.id - a.id);
-  const active = allocations.filter(a => (a.status || "Active") === "Active");
-  const activeIds = new Set(active.map(a => Number(a.student_id)));
-  const unallocated = students.filter(s => !activeIds.has(Number(s.id)));
-  const availableRooms = rooms.filter(r => Number(r.occupied) < Number(r.capacity));
-  const studentOpts = unallocated.map(s => `<option value="${s.id}">${H.esc(H.studentLabel(s))}</option>`).join("");
-  const roomOpts = availableRooms.map(r =>
-    `<option value="${r.id}">${H.esc(r.room_number)} (${r.occupied}/${r.capacity})</option>`
-  ).join("");
+  const roomMap = new Map(rooms.map(r => [Number(r.id), r]));
+  const studentMap = new Map(students.map(s => [Number(s.id), s]));
+
+  const roomOpts = rooms.filter(r => Number(r.occupied || 0) < Number(r.capacity || 0))
+    .map(r => `<option value="${r.id}">Room ${H.esc(r.room_number)} (${H.esc(r.block || "Main")}) - Spot: ${r.occupied}/${r.capacity}</option>`).join("");
+  const studentOpts = students.map(s => `<option value="${s.id}">${H.esc(H.studentLabel(s))}</option>`).join("");
 
   const roomRows = rooms.length
-    ? `<table><thead><tr><th>ID</th><th>Room</th><th>Block</th><th>Capacity</th><th>Occupied</th><th>Actions</th></tr></thead><tbody>
-       ${rooms.map(r => `<tr>
-         <td>${r.id}</td><td>${H.esc(r.room_number)}</td><td>${H.esc(r.block)}</td>
-         <td>${H.esc(r.capacity)}</td><td>${H.esc(r.occupied)}</td>
-         <td><a href="#" class="btn btn-danger" data-del-room="${r.id}">Delete</a></td></tr>`).join("")}
-       </tbody></table>`
-    : `<p class="empty">No rooms yet.</p>`;
-
-  const allocRows = allocations.length
-    ? `<table><thead><tr><th>ID</th><th>Student</th><th>Room</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-       ${allocations.map(a => {
-         const s = students.find(r => Number(r.id) === Number(a.student_id)) || {};
-         const room = rooms.find(r => Number(r.id) === Number(a.room_id)) || {};
-         const act = (a.status || "Active") === "Active";
-         return `<tr><td>${a.id}</td><td>${H.esc(H.studentLabel(s))}</td><td>${H.esc(room.room_number)}</td>
-           <td>${H.esc(a.allocate_date)}</td>
-           <td>${act ? H.badge("Active", "success") : H.badge(a.status || "—", "warning")}</td>
-           <td>${act ? `<a href="#" class="btn btn-danger" data-vacate="${a.id}">Vacate</a>` : "—"}</td></tr>`;
+    ? `<table><thead><tr><th>ID</th><th>Room Number</th><th>Block</th><th>Capacity</th><th>Occupied</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+       ${rooms.map(r => {
+         const occ = Number(r.occupied || 0);
+         const cap = Number(r.capacity || 0);
+         const isFull = occ >= cap;
+         return `<tr>
+           <td>${r.id}</td><td><strong>${H.esc(r.room_number)}</strong></td>
+           <td>${H.esc(r.block)}</td><td>${cap}</td><td>${occ}</td>
+           <td>${H.badge(isFull ? "Full" : "Available", isFull ? "danger" : "success")}</td>
+           <td><a href="#" class="btn btn-danger" data-del-room="${r.id}">Delete</a></td></tr>`;
        }).join("")}
        </tbody></table>`
-    : `<p class="empty">No allocations yet.</p>`;
+    : `<p class="empty">No hostel rooms registered.</p>`;
+
+  const allocRows = allocations.length
+    ? `<table><thead><tr><th>ID</th><th>Room</th><th>Student</th><th>Allocate Date</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+       ${allocations.map(a => {
+         const r = roomMap.get(Number(a.room_id));
+         const s = studentMap.get(Number(a.student_id));
+         const isActive = a.status === "Active";
+         return `<tr>
+           <td>${a.id}</td><td>${H.esc(r ? `Room ${r.room_number} (${r.block || ""})` : a.room_id)}</td>
+           <td>${H.esc(s ? H.studentLabel(s) : a.student_id)}</td>
+           <td>${H.esc(a.allocate_date)}</td>
+           <td>${H.badge(a.status || "Active", isActive ? "success" : "danger")}</td>
+           <td>
+             ${isActive ? `<a href="#" class="btn btn-danger" data-vacate="${a.id}" style="margin-right:0.3rem;">Vacate</a>` : ""}
+             <a href="#" class="btn btn-danger" data-del-alloc="${a.id}">Delete</a>
+           </td></tr>`;
+       }).join("")}
+       </tbody></table>`
+    : `<p class="empty">No room allocations recorded.</p>`;
 
   document.getElementById("pageContent").innerHTML = `
-    <h1 class="page-title">Hostel</h1>
-    <div class="card"><div class="card-header">Add Room</div><div class="card-body">
+    <h1 class="page-title">Hostel Management</h1>
+    <div class="card"><div class="card-header">Add Hostel Room</div><div class="card-body">
       <form id="addRoomForm"><div class="form-grid">
-        <div class="form-group"><label>Room Number *</label><input name="room_number" required placeholder="A-101"></div>
-        <div class="form-group"><label>Block</label><input name="block"></div>
-        <div class="form-group"><label>Capacity</label><input name="capacity" type="number" value="2" min="1"></div>
+        <div class="form-group"><label>Room Number *</label><input name="room_number" required placeholder="101"></div>
+        <div class="form-group"><label>Block / Building</label><input name="block" placeholder="Block A"></div>
+        <div class="form-group"><label>Capacity *</label><input name="capacity" type="number" value="2" min="1" required></div>
       </div><button type="submit" class="btn btn-primary">Add Room</button></form>
     </div></div>
-    <div class="card"><div class="card-header">Allocate Room</div><div class="card-body">
+
+    <div class="card"><div class="card-header">Allocate Room to Student</div><div class="card-body">
       <form id="allocForm"><div class="form-grid">
-        <div class="form-group"><label>Student *</label><select name="student_id" required><option value="">—</option>${studentOpts}</select></div>
-        <div class="form-group"><label>Room *</label><select name="room_id" required><option value="">—</option>${roomOpts}</select></div>
-      </div><button type="submit" class="btn btn-primary">Allocate</button></form>
+        <div class="form-group"><label>Room *</label><select name="room_id" required><option value="">Select Room</option>${roomOpts}</select></div>
+        <div class="form-group"><label>Student *</label><select name="student_id" required><option value="">Select Student</option>${studentOpts}</select></div>
+      </div><button type="submit" class="btn btn-primary">Allocate Room</button></form>
     </div></div>
-    <div class="card"><div class="card-header">Rooms (${rooms.length})</div><div class="card-body table-wrap">${roomRows}</div></div>
-    <div class="card"><div class="card-header">Allocations (${allocations.length})</div><div class="card-body table-wrap">${allocRows}</div></div>`;
+
+    <div class="card"><div class="card-header">Room List (${rooms.length})</div><div class="card-body table-wrap">${roomRows}</div></div>
+    <div class="card"><div class="card-header">Room Allocations (${allocations.length})</div><div class="card-body table-wrap">${allocRows}</div></div>`;
 
   document.getElementById("addRoomForm").addEventListener("submit", async e => {
     e.preventDefault();
     try { AUTH.requireAdmin(); } catch (err) { return; }
     const f = e.target;
-    const room_number = f.room_number.value.trim();
-    if (await DB.findOne("rooms", r => r.room_number === room_number)) {
-      Flash.push("Room already exists.", "danger"); route(); return;
-    }
     try {
       await DB.insert("rooms", {
-        room_number, block: f.block.value.trim() || null,
-        capacity: parseInt(f.capacity.value || "2", 10), occupied: 0
+        room_number: f.room_number.value.trim(), block: f.block.value.trim() || null,
+        capacity: parseInt(f.capacity.value, 10) || 2, occupied: 0
       });
       Flash.push("Room added.", "success");
     } catch (err) { Flash.push(err.message, "danger"); }
@@ -1940,18 +2025,23 @@ async function pageHostel() {
     e.preventDefault();
     try { AUTH.requireAdmin(); } catch (err) { return; }
     const f = e.target;
-    const student_id = parseInt(f.student_id.value, 10);
     const room_id = parseInt(f.room_id.value, 10);
-    const room = await DB.findOne("rooms", r => Number(r.id) === room_id);
-    if (!room || Number(room.occupied) >= Number(room.capacity)) {
-      Flash.push("Room full.", "danger"); route(); return;
+    const student_id = parseInt(f.student_id.value, 10);
+    const room = roomMap.get(room_id);
+
+    if (await DB.findOne("allocations", a => Number(a.student_id) === student_id && a.status === "Active")) {
+      Flash.push("Student already has an active room allocation.", "danger"); route(); return;
     }
+    if (!room || Number(room.occupied || 0) >= Number(room.capacity)) {
+      Flash.push("Selected room is full.", "danger"); route(); return;
+    }
+
     try {
       await DB.insert("allocations", {
         room_id, student_id, allocate_date: DB.today(), status: "Active"
       });
-      await DB.update("rooms", room_id, { occupied: Number(room.occupied) + 1 });
-      Flash.push("Allocated.", "success");
+      await DB.update("rooms", room_id, { occupied: Number(room.occupied || 0) + 1 });
+      Flash.push("Room allocated.", "success");
     } catch (err) { Flash.push(err.message, "danger"); }
     route();
   });
@@ -1961,13 +2051,17 @@ async function pageHostel() {
       e.preventDefault();
       try { AUTH.requireAdmin(); } catch (err) { return; }
       const id = parseInt(el.getAttribute("data-vacate"), 10);
-      H.confirm("Vacate this allocation?", async () => {
+      H.confirm("Vacate this room allocation?", async () => {
         try {
-          const alloc = await DB.findOne("allocations", r => Number(r.id) === id);
-          await DB.update("allocations", id, { status: "Vacated" });
-          const room = await DB.findOne("rooms", r => Number(r.id) === Number(alloc.room_id));
-          if (room) await DB.update("rooms", room.id, { occupied: Math.max(0, Number(room.occupied) - 1) });
-          Flash.push("Vacated.", "info");
+          const alloc = await DB.findOne("allocations", a => Number(a.id) === id);
+          if (alloc && alloc.status === "Active") {
+            await DB.update("allocations", id, { status: "Vacated" });
+            const room = roomMap.get(Number(alloc.room_id));
+            if (room) {
+              await DB.update("rooms", room.id, { occupied: Math.max(0, Number(room.occupied || 0) - 1) });
+            }
+            Flash.push("Room vacated.", "success");
+          }
         } catch (err) { Flash.push(err.message, "danger"); }
         route();
       });
@@ -1979,161 +2073,182 @@ async function pageHostel() {
       e.preventDefault();
       try { AUTH.requireAdmin(); } catch (err) { return; }
       const id = parseInt(el.getAttribute("data-del-room"), 10);
-      H.confirm("Delete room?", async () => {
+      H.confirm("Delete room and its allocations?", async () => {
         try {
           await DB.remove("rooms", id);
           await DB.removeWhere("allocations", "room_id", id);
-          Flash.push("Deleted.", "info");
+          Flash.push("Room deleted.", "info");
         } catch (err) { Flash.push(err.message, "danger"); }
+        route();
+      });
+    });
+  });
+
+  document.querySelectorAll("[data-del-alloc]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault();
+      try { AUTH.requireAdmin(); } catch (err) { return; }
+      const id = parseInt(el.getAttribute("data-del-alloc"), 10);
+      H.confirm("Delete allocation record?", async () => {
+        try { await DB.remove("allocations", id); Flash.push("Allocation deleted.", "info"); }
+        catch (err) { Flash.push(err.message, "danger"); }
         route();
       });
     });
   });
 }
 
-/* ============================================================
-   ROUTER
-   ============================================================ */
 async function pageProfile() {
   const session = await showAppShell("profile");
-  const profileName = session.full_name || session.username || "User";
-  const profileInitials = profileName.split(/\s+/).map(word => word[0]).join("").slice(0, 2).toUpperCase();
+  const avatar = profileAvatar(session);
+
   document.getElementById("pageContent").innerHTML = `
     <h1 class="page-title">My Profile</h1>
-    <div class="card"><div class="card-body" style="text-align:center;">
-      <div class="profile-picture" style="width:88px;height:88px;flex-basis:88px;margin:0 auto 1rem;font-size:1.7rem;">${H.esc(profileInitials)}</div>
-      <h2>${H.esc(profileName)}</h2>
-      <p style="color:#c4b5fd;margin-bottom:1.5rem;">${H.esc((session.role || "user").toUpperCase())}</p>
-      <div class="form-grid" style="text-align:left;max-width:680px;margin:0 auto 1.25rem;">
-        <div class="form-group"><label>Username</label><input value="${H.esc(session.username || "-")}" readonly></div>
-        <div class="form-group"><label>Entry Time</label><input value="${H.esc(session.entry_time || "-")}" readonly></div>
-        <div class="form-group"><label>Current Time</label><input id="profileCurrentTime" value="${H.esc(new Date().toLocaleString())}" readonly></div>
+    <div class="card"><div class="card-body">
+      <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+        <div class="profile-picture" style="width:72px;height:72px;font-size:1.8rem;">
+          <img id="avatarPreview" src="${avatar}" alt="Avatar">
+        </div>
+        <div>
+          <h2 style="font-size:1.3rem;color:#f9fafb;">${H.esc(session.full_name || session.username)}</h2>
+          <p style="color:#9ca3af;font-size:0.9rem;">${H.esc(session.email)} (${H.esc((session.role || "").toUpperCase())})</p>
+        </div>
       </div>
-      <a class="btn btn-primary" href="#dashboard">Back to Dashboard</a>
+      <form id="profileForm"><div class="form-grid">
+        <div class="form-group"><label>Full Name</label><input name="full_name" value="${H.esc(session.full_name || "")}"></div>
+        <div class="form-group"><label>Email</label><input value="${H.esc(session.email || "")}" disabled readonly></div>
+        <div class="form-group"><label>Role</label><input value="${H.esc((session.role || "").toUpperCase())}" disabled readonly></div>
+        <div class="form-group"><label>Avatar Image (Upload)</label><input type="file" id="avatarInput" accept="image/*"></div>
+      </div><button type="submit" class="btn btn-primary">Save Profile</button></form>
     </div></div>`;
-  if (window.umsProfileClockInterval) clearInterval(window.umsProfileClockInterval);
-  window.umsProfileClockInterval = setInterval(() => {
-    const clock = document.getElementById("profileCurrentTime");
-    if (clock) clock.value = new Date().toLocaleString();
-  }, 1000);
+
+  document.getElementById("avatarInput").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        document.getElementById("avatarPreview").src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  document.getElementById("profileForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const f = e.target;
+    const name = f.full_name.value.trim();
+    const fileInput = document.getElementById("avatarInput");
+
+    let avatarData = session.avatar_data;
+    if (fileInput.files && fileInput.files[0]) {
+      avatarData = await new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = ev => resolve(ev.target.result);
+        reader.readAsDataURL(fileInput.files[0]);
+      });
+    }
+
+    session.full_name = name || session.username;
+    session.avatar_data = avatarData;
+    localStorage.setItem("ums_session", JSON.stringify(session));
+
+    Flash.push("Profile updated successfully.", "success");
+    route();
+  });
 }
 
-const PAGES = {
-  login: pageLogin,
-  signup: pageSignup,
-  profile: pageProfile,
-  dashboard: pageDashboard,
-  accounts: pageAccounts,
-  idcards: pageIdCards,
-  students: pageStudents,
-  faculty: pageFaculty,
-  courses: pageCourses,
-  enrollment: pageEnrollment,
-  fees: pageFees,
-  exams: pageExams,
-  library: pageLibrary,
-  hostel: pageHostel,
-  // Student portal pages
-  myfees: pageMyFees,
-  myidcard: pageMyIdCard,
-  admitcard: pageAdmitCard
-};
-
+/* ============================================================
+   ROUTER EXECUTION
+   ============================================================ */
 async function route() {
-  const name = getRoute();
-  // Students may only access their own portal pages
-  const session = AUTH.getSession();
-  if (session && isStudentSession(session)) {
-    const allowed = ["dashboard", "myfees", "myidcard", "admitcard", "profile", "login", "signup"];
-    if (!allowed.includes(name)) {
-      location.hash = "#dashboard";
-      return;
-    }
-  }
-  const fn = PAGES[name] || pageLogin;
+  const r = getRoute();
   try {
-    await fn();
-  } catch (e) {
-    if (e.message !== "redirect") {
-      console.error(e);
-      const app = document.getElementById("app");
-      if (app) {
-        app.innerHTML = `<div class="container"><div class="flash flash-danger">${H.esc(e.message)}</div>
-          <p><a href="#login">Back to login</a></p></div>`;
-      }
+    switch (r) {
+      case "login":      await pageLogin(); break;
+      case "signup":     await pageSignup(); break;
+      case "dashboard":  await pageDashboard(); break;
+      case "myfees":     await pageMyFees(); break;
+      case "myidcard":   await pageMyIdCard(); break;
+      case "admitcard":  await pageAdmitCard(); break;
+      case "accounts":   await pageAccounts(); break;
+      case "idcards":    await pageIdCards(); break;
+      case "students":   await pageStudents(); break;
+      case "faculty":    await pageFaculty(); break;
+      case "courses":    await pageCourses(); break;
+      case "enrollment": await pageEnrollment(); break;
+      case "fees":       await pageFees(); break;
+      case "exams":      await pageExams(); break;
+      case "library":    await pageLibrary(); break;
+      case "hostel":     await pageHostel(); break;
+      case "profile":    await pageProfile(); break;
+      default:           await pageDashboard(); break;
+    }
+  } catch (err) {
+    if (err.message !== "redirect") {
+      console.error(err);
+      Flash.push("Page routing error: " + err.message, "danger");
     }
   }
 }
 
 window.addEventListener("hashchange", route);
+window.addEventListener("DOMContentLoaded", () => {
+  if (!UMS_CONFIG.SCRIPT_URL || UMS_CONFIG.SCRIPT_URL.indexOf("PASTE_YOUR") !== -1) {
+    const banner = document.getElementById("configBanner");
+    if (banner) banner.classList.remove("hidden");
+  }
+  route();
 
-/* ============================================================
-  AI ASSISTANT INTEGRATION (Google Apps Script proxy)
-  ============================================================ */
-
-function toggleAIChat() {
+  // AI Widget Interactivity
+  const chatBtn = document.getElementById("ai-chat-button");
   const chatBox = document.getElementById("ai-chat-box");
-  chatBox.style.display = (chatBox.style.display === "flex") ? "none" : "flex";
-}
+  const chatClose = document.getElementById("ai-chat-close");
+  const chatForm = document.getElementById("ai-chat-form");
+  const chatInput = document.getElementById("ai-chat-input");
+  const chatMsgs = document.getElementById("ai-chat-messages");
 
-async function sendAIMessage() {
-  const inputEl = document.getElementById("aiInput");
-  const messagesContainer = document.getElementById("aiChatMessages");
-  const prompt = inputEl.value.trim();
-
-  if (!prompt) return;
-
-  // Render User Message
-  const userMsgDiv = document.createElement("div");
-  userMsgDiv.className = "ai-msg ai-msg-user";
-  userMsgDiv.textContent = prompt;
-  messagesContainer.appendChild(userMsgDiv);
-  inputEl.value = "";
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-  // Placeholder Response Loading Indicator
-  const botMsgDiv = document.createElement("div");
-  botMsgDiv.className = "ai-msg ai-msg-assistant";
-  botMsgDiv.textContent = "Thinking...";
-  messagesContainer.appendChild(botMsgDiv);
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-  try {
-    const data = await DB.api("askai", { prompt: prompt });
-    botMsgDiv.textContent = data.reply || "Error: Unable to process request.";
-  } catch (err) {
-    botMsgDiv.textContent = err.message || "Connection error. Check the Apps Script deployment.";
+  if (chatBtn && chatBox && chatClose) {
+    chatBtn.addEventListener("click", () => {
+      chatBox.style.display = chatBox.style.display === "flex" ? "none" : "flex";
+    });
+    chatClose.addEventListener("click", () => {
+      chatBox.style.display = "none";
+    });
   }
 
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
-}
+  if (chatForm) {
+    chatForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const prompt = chatInput.value.trim();
+      if (!prompt) return;
 
-// Show config banner if URL not set
-if (!UMS_CONFIG.SCRIPT_URL || UMS_CONFIG.SCRIPT_URL.indexOf("PASTE_YOUR") !== -1) {
-  document.getElementById("configBanner").classList.remove("hidden");
-}
+      const userMsg = document.createElement("div");
+      userMsg.className = "ai-msg ai-msg-user";
+      userMsg.textContent = prompt;
+      chatMsgs.appendChild(userMsg);
+      chatInput.value = "";
+      chatMsgs.scrollTop = chatMsgs.scrollHeight;
 
-AUTH.logout();
-if (location.hash !== "#login") location.hash = "#login";
-else route();
+      const aiMsg = document.createElement("div");
+      aiMsg.className = "ai-msg ai-msg-assistant";
+      aiMsg.textContent = "Thinking...";
+      chatMsgs.appendChild(aiMsg);
+      chatMsgs.scrollTop = chatMsgs.scrollHeight;
+
+      try {
+        const res = await DB.api("askai", { prompt });
+        if (res.ok && res.reply) {
+          aiMsg.textContent = res.reply;
+        } else {
+          aiMsg.textContent = res.error || "Sorry, I couldn't get an answer.";
+        }
+      } catch (err) {
+        aiMsg.textContent = "Error: " + err.message;
+      }
+      chatMsgs.scrollTop = chatMsgs.scrollHeight;
+    });
+  }
+});
 </script>
-
-<!-- AI Assistant Chat UI -->
-<div id="ai-widget-container">
-  <div id="ai-chat-box">
-    <div class="ai-chat-header">
-      <span>🤖 UMS Assistant</span>
-      <button onclick="toggleAIChat()" style="background:none; border:none; color:white; cursor:pointer;">✕</button>
-    </div>
-    <div class="ai-chat-messages" id="aiChatMessages">
-      <div class="ai-msg ai-msg-assistant">Hello! How can I assist you with the University System today?</div>
-    </div>
-    <div class="ai-chat-input-area">
-      <input type="text" id="aiInput" placeholder="Ask a question..." onkeydown="if(event.key==='Enter') sendAIMessage()">
-      <button onclick="sendAIMessage()">Send</button>
-    </div>
-  </div>
-  <button id="ai-chat-button" onclick="toggleAIChat()">🤖</button>
-</div>
 </body>
 </html>
