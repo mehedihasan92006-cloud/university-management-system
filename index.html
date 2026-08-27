@@ -320,7 +320,7 @@
    CONFIG – paste your Google Apps Script Web App URL here
    ============================================================ */
 const UMS_CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbz_9qiV8WmDE0KPlddwgT0KeJB9K98lpPzp2mj9GvedtcTgqDGKjDYSPvhTBJktfL4kkQ/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbym1rOXV4WDO6I7YVfciw9iunNBjg-1F4tSsjAO0s2YouHesOB_IfI-jG1KocplPc18/exec",
   SHOW_LOADING: false
 };
 
@@ -725,7 +725,7 @@ async function showAppShell(activeKey) {
   // Faculty access message
   if (
     !isStudentSession(session) &&
-    session.logintype === "faculty" &&
+    session.login_type === "faculty" &&
     session.role === "faculty"
   ) {
     const info = document.createElement("div");
@@ -1168,7 +1168,6 @@ async function pageAdmitCard() {
     </div>`;
 
   document.getElementById("printAdmitBtn").addEventListener("click", () => {
-    const area = document.getElementById("admitCardPrintArea");
     const win = window.open("", "_blank");
     win.document.write(`<!DOCTYPE html><html><head><title>Admit Card - ${H.esc(student.student_id)}</title>
       <style>
@@ -1198,15 +1197,16 @@ async function pageAdmitCard() {
       <p style="margin-top:20px;font-size:12px;text-align:center;color:#666;">System-generated admit card. Carry a printed copy and photo ID.</p>
       </body></html>`);
     win.document.close();
-    setTimeout(() => { win.print(); }, 300);
+    win.focus();
+    setTimeout(() => win.print(), 300);
   });
 
   document.getElementById("downloadAdmitBtn").addEventListener("click", () => {
     const html = document.getElementById("admitCardPrintArea").outerHTML;
-    const blob = new Blob([`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Admit Card</title></head><body style="font-family:sans-serif;padding:20px;">${html}</body></html>`], { type: "text/html" });
+    const blob = new Blob([`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Admit Card</title></head><body style="font-family:system-ui;padding:24px;background:#fff;color:#111;">${html}</body></html>`], { type: "text/html" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `AdmitCard_${student.student_id}.html`;
+    a.download = `AdmitCard_${student.student_id || "student"}.html`;
     a.click();
     URL.revokeObjectURL(a.href);
   });
@@ -1214,41 +1214,20 @@ async function pageAdmitCard() {
 
 async function pageAccounts() {
   await showAppShell("accounts");
-  const users = (await DB.getTable("users")).slice().sort((a, b) => b.id - a.id);
-  const studentCount = users.filter(u => u.role === "student").length;
-  const facultyCount = users.filter(u => u.role === "faculty").length;
-  const adminCount = users.filter(u => u.role === "admin").length;
-
-  const roleBadge = role => {
-    const cls = role === "admin" ? "flash-info" : (role === "faculty" ? "flash-warning" : "flash-success");
-    return `<span class="flash ${cls}" style="display:inline-block;padding:0.15rem 0.55rem;margin:0;">${H.esc((role || "").toUpperCase())}</span>`;
-  };
-
+  const users = await DB.getTable("users");
+  users.sort((a, b) => b.id - a.id);
   const rows = users.length
-    ? `<table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Student ID</th><th>Faculty ID</th><th>Created</th><th>Actions</th></tr></thead><tbody>
+    ? `<table><thead><tr><th>ID</th><th>Username</th><th>Full Name</th><th>Email</th><th>Role</th><th>Created</th><th>Actions</th></tr></thead><tbody>
        ${users.map(u => `<tr>
-         <td>${u.id}</td>
-         <td>${H.esc(u.full_name || u.username)}</td>
-         <td>${H.esc(u.email)}</td>
-         <td>${roleBadge(u.role)}</td>
-         <td>${H.esc(u.student_id || "—")}</td>
-         <td>${H.esc(u.faculty_id || "—")}</td>
-         <td>${H.esc(u.created_at || "—")}</td>
-         <td>${u.role === "admin" ? "—" : `<a href="#" class="btn btn-danger" data-del="${u.id}">Remove</a>`}</td>
-       </tr>`).join("")}
+         <td>${u.id}</td><td>${H.esc(u.username)}</td><td>${H.esc(u.full_name)}</td>
+         <td>${H.esc(u.email)}</td><td>${H.badge((u.role || "user").toUpperCase(), u.role === "admin" ? "success" : "warning")}</td>
+         <td>${H.esc(u.created_at)}</td>
+         <td><a href="#" class="btn btn-danger" data-del="${u.id}">Delete</a></td></tr>`).join("")}
        </tbody></table>`
-    : `<p class="empty">No accounts have signed up yet.</p>`;
+    : `<p class="empty">No user accounts yet.</p>`;
 
   document.getElementById("pageContent").innerHTML = `
-    <h1 class="page-title">Accounts</h1>
-    <p style="color:#9ca3af;font-size:0.85rem;margin-bottom:1rem;">
-      Every account that can currently sign in to this system, with the role and ID it logs in as.
-    </p>
-    <div class="stats-grid">
-      <div class="stat-card"><div style="font-size:1.6rem;font-weight:700;">${studentCount}</div><div style="color:#9ca3af;font-size:0.85rem;">Student</div></div>
-      <div class="stat-card"><div style="font-size:1.6rem;font-weight:700;">${facultyCount}</div><div style="color:#9ca3af;font-size:0.85rem;">Faculty</div></div>
-      <div class="stat-card"><div style="font-size:1.6rem;font-weight:700;">${adminCount}</div><div style="color:#9ca3af;font-size:0.85rem;">Admin</div></div>
-    </div>
+    <h1 class="page-title">User Accounts</h1>
     <div class="card"><div class="card-header">All Accounts (${users.length})</div>
     <div class="card-body table-wrap">${rows}</div></div>`;
 
@@ -1257,10 +1236,16 @@ async function pageAccounts() {
       e.preventDefault();
       try { AUTH.requireAdmin(); } catch (err) { return; }
       const id = parseInt(el.getAttribute("data-del"), 10);
-      H.confirm("Remove this account? They will no longer be able to log in.", async () => {
+      const session = AUTH.getSession();
+      if (session && Number(session.user_id) === id) {
+        Flash.push("You cannot delete your own account while logged in.", "danger");
+        route();
+        return;
+      }
+      H.confirm("Delete this user account?", async () => {
         try {
           await DB.remove("users", id);
-          Flash.push("Account removed.", "info");
+          Flash.push("Account deleted.", "info");
         } catch (err) { Flash.push(err.message, "danger"); }
         route();
       });
@@ -1270,89 +1255,56 @@ async function pageAccounts() {
 
 async function pageIdCards() {
   await showAppShell("idcards");
-  const cards = (await DB.getTable("id_cards")).slice().sort((a, b) => b.id - a.id);
+  const cards = await DB.getTable("id_cards");
+  cards.sort((a, b) => b.id - a.id);
   const rows = cards.length
-    ? `<table><thead><tr><th>Code</th><th>Type</th><th>Label</th><th>Email</th><th>Status</th><th>Issued</th><th>Sent</th><th>Actions</th></tr></thead><tbody>
+    ? `<table><thead><tr><th>ID</th><th>Code</th><th>Type</th><th>Label</th><th>Email</th><th>Status</th><th>Issued</th><th>Actions</th></tr></thead><tbody>
        ${cards.map(c => `<tr>
-         <td><strong>${H.esc(c.code)}</strong></td>
-         <td>${c.type === "student" ? "Student" : "Faculty"}</td>
-         <td>${H.esc(c.label || "—")}</td>
-         <td>${H.esc(c.recipient_email || "—")}</td>
-         <td>${c.status === "used"
-            ? '<span class="flash flash-warning" style="display:inline-block;padding:0.15rem 0.55rem;margin:0;">Used</span>'
-            : '<span class="flash flash-success" style="display:inline-block;padding:0.15rem 0.55rem;margin:0;">Available</span>'}</td>
-         <td>${H.esc(c.issued_date || "—")}</td>
-         <td>${H.esc(c.email_sent_date || "—")}</td>
-         <td style="white-space:nowrap;">
-           ${c.status !== "used" && c.recipient_email ? `<a href="#" class="btn btn-primary" data-send="${c.id}" style="margin-right:0.4rem;">Send Email</a>` : ""}
-           ${c.status !== "used" ? `<a href="#" class="btn btn-danger" data-del="${c.id}">Delete</a>` : ""}
-         </td>
-       </tr>`).join("")}
+         <td>${c.id}</td><td><strong>${H.esc(c.code)}</strong></td><td>${H.esc(c.type)}</td>
+         <td>${H.esc(c.label)}</td><td>${H.esc(c.recipient_email)}</td>
+         <td>${H.badge(c.status || "issued", c.status === "used" ? "success" : "warning")}</td>
+         <td>${H.esc(c.issued_date)}</td>
+         <td><a href="#" class="btn btn-danger" data-del="${c.id}">Delete</a></td></tr>`).join("")}
        </tbody></table>`
-    : `<p class="empty">No IDs issued yet.</p>`;
+    : `<p class="empty">No ID cards issued yet.</p>`;
 
   document.getElementById("pageContent").innerHTML = `
     <h1 class="page-title">ID Cards</h1>
-    <div class="card"><div class="card-header">Issue a New ID</div><div class="card-body">
-      <p style="color:#9ca3af;font-size:0.85rem;margin-bottom:0.9rem;">
-        Generate a Student ID or Faculty ID here first, tied to the person's email. They'll sign up using that
-        exact email (no need to type the ID) and it will auto-match to this card. Each ID can only be used once.
-      </p>
-      <form id="issueForm"><div class="form-grid">
-        <div class="form-group"><label>ID Type *</label>
+    <div class="card"><div class="card-header">Issue New ID Card</div><div class="card-body">
+      <form id="addForm"><div class="form-grid">
+        <div class="form-group"><label>Code / Student or Faculty ID *</label><input name="code" required placeholder="STU001"></div>
+        <div class="form-group"><label>Type *</label>
           <select name="type" required>
-            <option value="student">Student ID</option>
-            <option value="faculty">Faculty ID</option>
+            <option value="student">Student</option>
+            <option value="faculty">Faculty</option>
           </select>
         </div>
-        <div class="form-group"><label>Label (optional)</label>
-          <input name="label" placeholder="e.g. recipient's name"></div>
-        <div class="form-group"><label>Recipient Email *</label>
-          <input name="recipient_email" type="email" required placeholder="student@example.com"></div>
-      </div><button type="submit" class="btn btn-primary">Generate ID</button></form>
+        <div class="form-group"><label>Label / Name</label><input name="label" placeholder="John Doe"></div>
+        <div class="form-group"><label>Recipient Email</label><input name="recipient_email" type="email"></div>
+      </div><button type="submit" class="btn btn-primary">Issue ID Card</button></form>
     </div></div>
-    <div class="card"><div class="card-header">All Issued IDs (${cards.length})</div>
+    <div class="card"><div class="card-header">All ID Cards (${cards.length})</div>
     <div class="card-body table-wrap">${rows}</div></div>`;
 
-  document.getElementById("issueForm").addEventListener("submit", async e => {
+  document.getElementById("addForm").addEventListener("submit", async e => {
     e.preventDefault();
     try { AUTH.requireAdmin(); } catch (err) { return; }
     const f = e.target;
-    const btn = f.querySelector("button[type=submit]");
-    btn.disabled = true;
     try {
-      const res = await DB.api("issueid", {
+      await DB.insert("id_cards", {
+        code: f.code.value.trim(),
         type: f.type.value,
-        label: f.label.value.trim(),
-        recipientEmail: f.recipient_email.value.trim()
+        label: f.label.value.trim() || null,
+        recipient_email: f.recipient_email.value.trim() || null,
+        status: "issued",
+        issued_date: DB.today(),
+        email_sent_date: null,
+        used_by: null,
+        used_date: null
       });
-      if (res.ok) {
-        DB.invalidate("id_cards");
-        Flash.push(`${f.type.value === "student" ? "Student" : "Faculty"} ID generated: ${res.code}`, "success");
-      } else {
-        Flash.push(res.error || "Could not generate ID.", "danger");
-      }
-    } catch (err) {
-      Flash.push(err.message, "danger");
-    }
+      Flash.push("ID card issued.", "success");
+    } catch (err) { Flash.push(err.message, "danger"); }
     route();
-  });
-
-  document.querySelectorAll("[data-send]").forEach(el => {
-    el.addEventListener("click", async e => {
-      e.preventDefault();
-      try { AUTH.requireAdmin(); } catch (err) { return; }
-      const id = parseInt(el.getAttribute("data-send"), 10);
-      el.textContent = "Sending…";
-      try {
-        const res = await DB.api("sendidemail", { id });
-        DB.invalidate("id_cards");
-        Flash.push(res.ok ? (res.message || "Email sent.") : (res.error || "Could not send email."), res.ok ? "success" : "danger");
-      } catch (err) {
-        Flash.push(err.message, "danger");
-      }
-      route();
-    });
   });
 
   document.querySelectorAll("[data-del]").forEach(el => {
@@ -1360,11 +1312,9 @@ async function pageIdCards() {
       e.preventDefault();
       try { AUTH.requireAdmin(); } catch (err) { return; }
       const id = parseInt(el.getAttribute("data-del"), 10);
-      H.confirm("Delete this unused ID?", async () => {
-        try {
-          await DB.remove("id_cards", id);
-          Flash.push("ID deleted.", "info");
-        } catch (err) { Flash.push(err.message, "danger"); }
+      H.confirm("Delete this ID card?", async () => {
+        try { await DB.remove("id_cards", id); Flash.push("ID card deleted.", "info"); }
+        catch (err) { Flash.push(err.message, "danger"); }
         route();
       });
     });
@@ -1373,53 +1323,108 @@ async function pageIdCards() {
 
 async function pageStudents() {
   await showAppShell("students");
-  const students = (await DB.getTable("students")).slice().sort((a, b) => b.id - a.id);
+  const students = await DB.getTable("students");
+  students.sort((a, b) => b.id - a.id);
   const rows = students.length
-    ? `<table><thead><tr><th>ID</th><th>Student ID</th><th>Name</th><th>Department</th><th>Year</th><th>Email</th><th>Phone</th><th>Actions</th></tr></thead><tbody>
+    ? `<table><thead><tr><th>ID</th><th>Student ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Department</th><th>Year</th><th>Actions</th></tr></thead><tbody>
        ${students.map(s => `<tr>
          <td>${s.id}</td><td>${H.esc(s.student_id)}</td><td>${H.esc(H.fullName(s))}</td>
-         <td>${H.esc(s.department)}</td><td>${H.esc(s.year)}</td><td>${H.esc(s.email)}</td><td>${H.esc(s.phone)}</td>
-         <td><a href="#" class="btn btn-danger" data-del="${s.id}">Delete</a></td></tr>`).join("")}
+         <td>${H.esc(s.email)}</td><td>${H.esc(s.phone)}</td><td>${H.esc(s.department)}</td><td>${H.esc(s.year)}</td>
+         <td>
+           <a href="#" class="btn btn-primary" data-edit="${s.id}" style="margin-right:0.3rem;">Edit</a>
+           <a href="#" class="btn btn-danger" data-del="${s.id}">Delete</a>
+         </td></tr>`).join("")}
        </tbody></table>`
     : `<p class="empty">No students yet.</p>`;
 
   document.getElementById("pageContent").innerHTML = `
     <h1 class="page-title">Students</h1>
-    <div class="card"><div class="card-header">Add New Student</div><div class="card-body">
-      <form id="addForm"><div class="form-grid">
-        <div class="form-group"><label>Student ID *</label><input name="student_id" required placeholder="STU001"></div>
-        <div class="form-group"><label>First Name *</label><input name="first_name" required></div>
-        <div class="form-group"><label>Last Name *</label><input name="last_name" required></div>
-        <div class="form-group"><label>Email</label><input name="email" type="email"></div>
-        <div class="form-group"><label>Phone</label><input name="phone"></div>
-        <div class="form-group"><label>Department</label><input name="department"></div>
-        <div class="form-group"><label>Year</label><select name="year"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
-        <div class="form-group"><label>Gender</label><select name="gender"><option value="">—</option><option>Male</option><option>Female</option><option>Other</option></select></div>
-        <div class="form-group"><label>Address</label><input name="address"></div>
-      </div><button type="submit" class="btn btn-primary">Add Student</button></form>
+    <div class="card"><div class="card-header" id="formHeader">Add Student</div><div class="card-body">
+      <form id="studentForm">
+        <input type="hidden" name="edit_id" id="edit_id" value="">
+        <div class="form-grid">
+          <div class="form-group"><label>Student ID *</label><input name="student_id" id="field_student_id" required placeholder="STU001"></div>
+          <div class="form-group"><label>First Name *</label><input name="first_name" id="field_first_name" required></div>
+          <div class="form-group"><label>Last Name</label><input name="last_name" id="field_last_name"></div>
+          <div class="form-group"><label>Email</label><input name="email" id="field_email" type="email"></div>
+          <div class="form-group"><label>Phone</label><input name="phone" id="field_phone"></div>
+          <div class="form-group"><label>Department</label><input name="department" id="field_department"></div>
+          <div class="form-group"><label>Year</label><input name="year" id="field_year" placeholder="1st Year"></div>
+          <div class="form-group"><label>Gender</label>
+            <select name="gender" id="field_gender">
+              <option value="">—</option>
+              <option>Male</option><option>Female</option><option>Other</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Address</label><input name="address" id="field_address"></div>
+        </div>
+        <button type="submit" class="btn btn-primary" id="saveBtn">Add Student</button>
+        <button type="button" class="btn btn-danger hidden" id="cancelBtn" style="margin-left:0.5rem;">Cancel Edit</button>
+      </form>
     </div></div>
     <div class="card"><div class="card-header">All Students (${students.length})</div>
     <div class="card-body table-wrap">${rows}</div></div>`;
 
-  document.getElementById("addForm").addEventListener("submit", async e => {
+  document.getElementById("studentForm").addEventListener("submit", async e => {
     e.preventDefault();
     try { AUTH.requireAdmin(); } catch (err) { return; }
     const f = e.target;
+    const editId = f.edit_id.value ? parseInt(f.edit_id.value, 10) : null;
     const student_id = f.student_id.value.trim();
-    if (await DB.findOne("students", s => s.student_id === student_id)) {
-      Flash.push("Student ID already exists.", "danger"); route(); return;
-    }
+    const payload = {
+      student_id,
+      first_name: f.first_name.value.trim(),
+      last_name: f.last_name.value.trim() || null,
+      email: f.email.value.trim() || null,
+      phone: f.phone.value.trim() || null,
+      department: f.department.value.trim() || null,
+      year: f.year.value.trim() || null,
+      gender: f.gender.value || null,
+      address: f.address.value.trim() || null
+    };
     try {
-      await DB.insert("students", {
-        student_id, first_name: f.first_name.value.trim(), last_name: f.last_name.value.trim(),
-        email: f.email.value.trim() || null, phone: f.phone.value.trim() || null,
-        department: f.department.value.trim() || null, year: f.year.value || null,
-        gender: f.gender.value || null, address: f.address.value.trim() || null, created_at: DB.today()
-      });
-      Flash.push("Student added.", "success");
+      if (editId) {
+        await DB.update("students", editId, payload);
+        Flash.push("Student updated successfully.", "success");
+      } else {
+        if (await DB.findOne("students", r => r.student_id === student_id)) {
+          Flash.push("Student ID already exists.", "danger");
+          route();
+          return;
+        }
+        payload.created_at = DB.today();
+        await DB.insert("students", payload);
+        Flash.push("Student added successfully.", "success");
+      }
     } catch (err) { Flash.push(err.message, "danger"); }
     route();
   });
+
+  document.querySelectorAll("[data-edit]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault();
+      try { AUTH.requireAdmin(); } catch (err) { return; }
+      const id = parseInt(el.getAttribute("data-edit"), 10);
+      const item = students.find(s => Number(s.id) === id);
+      if (!item) return;
+      document.getElementById("edit_id").value = item.id;
+      document.getElementById("field_student_id").value = item.student_id || "";
+      document.getElementById("field_first_name").value = item.first_name || "";
+      document.getElementById("field_last_name").value = item.last_name || "";
+      document.getElementById("field_email").value = item.email || "";
+      document.getElementById("field_phone").value = item.phone || "";
+      document.getElementById("field_department").value = item.department || "";
+      document.getElementById("field_year").value = item.year || "";
+      document.getElementById("field_gender").value = item.gender || "";
+      document.getElementById("field_address").value = item.address || "";
+      document.getElementById("formHeader").textContent = "Edit Student";
+      document.getElementById("saveBtn").textContent = "Update Student";
+      document.getElementById("cancelBtn").classList.remove("hidden");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  });
+
+  document.getElementById("cancelBtn").addEventListener("click", () => route());
 
   document.querySelectorAll("[data-del]").forEach(el => {
     el.addEventListener("click", e => {
@@ -1433,12 +1438,7 @@ async function pageStudents() {
           await DB.removeWhere("fees", "student_id", id);
           await DB.removeWhere("results", "student_id", id);
           await DB.removeWhere("issues", "student_id", id);
-          const alloc = await DB.findOne("allocations", r => Number(r.student_id) === id);
-          if (alloc) {
-            const room = await DB.findOne("rooms", r => Number(r.id) === Number(alloc.room_id));
-            if (room) await DB.update("rooms", room.id, { occupied: Math.max(0, Number(room.occupied) - 1) });
-            await DB.removeWhere("allocations", "student_id", id);
-          }
+          await DB.removeWhere("allocations", "student_id", id);
           Flash.push("Student deleted.", "info");
         } catch (err) { Flash.push(err.message, "danger"); }
         route();
@@ -1449,120 +1449,61 @@ async function pageStudents() {
 
 async function pageFaculty() {
   await showAppShell("faculty");
-  const faculty = (await DB.getTable("faculty")).slice().sort((a, b) => b.id - a.id);
-  
+  const faculty = await DB.getTable("faculty");
+  faculty.sort((a, b) => b.id - a.id);
   const rows = faculty.length
-    ? `<table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Faculty ID</th>
-            <th>Name</th>
-            <th>Department</th>
-            <th>Designation</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-       ${faculty.map(f => `
-          <tr>
-            <td>${f.id}</td>
-            <td>${H.esc(f.faculty_id)}</td>
-            <td>${H.esc(H.fullName(f))}</td>
-            <td>${H.esc(f.department)}</td>
-            <td>${H.esc(f.designation)}</td>
-            <td>${H.esc(f.email)}</td>
-            <td>${H.esc(f.phone)}</td>
-            <td style="white-space:nowrap;">
-              <a href="#" class="btn btn-primary" data-edit="${f.id}" style="margin-right:0.3rem;">Edit</a>
-              <a href="#" class="btn btn-danger" data-del="${f.id}">Delete</a>
-            </td>
-          </tr>`).join("")}
-       </tbody>
-       </table>`
-    : `<p class="empty">No faculty members found.</p>`;
+    ? `<table><thead><tr><th>ID</th><th>Faculty ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Department</th><th>Designation</th><th>Actions</th></tr></thead><tbody>
+       ${faculty.map(f => `<tr>
+         <td>${f.id}</td><td>${H.esc(f.faculty_id)}</td><td>${H.esc(H.fullName(f))}</td>
+         <td>${H.esc(f.email)}</td><td>${H.esc(f.phone)}</td><td>${H.esc(f.department)}</td><td>${H.esc(f.designation)}</td>
+         <td>
+           <a href="#" class="btn btn-primary" data-edit="${f.id}" style="margin-right:0.3rem;">Edit</a>
+           <a href="#" class="btn btn-danger" data-del="${f.id}">Delete</a>
+         </td></tr>`).join("")}
+       </tbody></table>`
+    : `<p class="empty">No faculty yet.</p>`;
 
   document.getElementById("pageContent").innerHTML = `
-    <h1 class="page-title">Faculty Management</h1>
-    
-    <!-- Add / Edit Form -->
-    <div class="card">
-      <div class="card-header" id="formHeader">Add Faculty</div>
-      <div class="card-body">
-        <form id="facultyForm">
-          <input type="hidden" id="edit_id" name="edit_id" value="">
-          <div class="form-grid">
-            <div class="form-group">
-              <label>Faculty ID *</label>
-              <input name="faculty_id" id="field_faculty_id" required placeholder="FAC001">
-            </div>
-            <div class="form-group">
-              <label>First Name *</label>
-              <input name="first_name" id="field_first_name" required>
-            </div>
-            <div class="form-group">
-              <label>Last Name *</label>
-              <input name="last_name" id="field_last_name" required>
-            </div>
-            <div class="form-group">
-              <label>Email</label>
-              <input name="email" id="field_email" type="email">
-            </div>
-            <div class="form-group">
-              <label>Phone</label>
-              <input name="phone" id="field_phone">
-            </div>
-            <div class="form-group">
-              <label>Department</label>
-              <input name="department" id="field_department">
-            </div>
-            <div class="form-group">
-              <label>Designation</label>
-              <input name="designation" id="field_designation" placeholder="Professor">
-            </div>
-          </div>
-          <div style="display:flex;gap:0.5rem;">
-            <button type="submit" class="btn btn-primary" id="saveBtn">Add Faculty</button>
-            <button type="button" class="btn btn-danger hidden" id="cancelBtn">Cancel Edit</button>
-          </div>
-        </form>
-      </div>
-    </div>
-    
-    <!-- Data Table -->
-    <div class="card">
-      <div class="card-header">All Faculty (${faculty.length})</div>
-      <div class="card-body table-wrap">${rows}</div>
-    </div>`;
+    <h1 class="page-title">Faculty</h1>
+    <div class="card"><div class="card-header" id="formHeader">Add Faculty Member</div><div class="card-body">
+      <form id="facultyForm">
+        <input type="hidden" name="edit_id" id="edit_id" value="">
+        <div class="form-grid">
+          <div class="form-group"><label>Faculty ID *</label><input name="faculty_id" id="field_faculty_id" required placeholder="FAC001"></div>
+          <div class="form-group"><label>First Name *</label><input name="first_name" id="field_first_name" required></div>
+          <div class="form-group"><label>Last Name</label><input name="last_name" id="field_last_name"></div>
+          <div class="form-group"><label>Email</label><input name="email" id="field_email" type="email"></div>
+          <div class="form-group"><label>Phone</label><input name="phone" id="field_phone"></div>
+          <div class="form-group"><label>Department</label><input name="department" id="field_department"></div>
+          <div class="form-group"><label>Designation</label><input name="designation" id="field_designation" placeholder="Professor"></div>
+        </div>
+        <button type="submit" class="btn btn-primary" id="saveBtn">Add Faculty</button>
+        <button type="button" class="btn btn-danger hidden" id="cancelBtn" style="margin-left:0.5rem;">Cancel Edit</button>
+      </form>
+    </div></div>
+    <div class="card"><div class="card-header">All Faculty (${faculty.length})</div>
+    <div class="card-body table-wrap">${rows}</div></div>`;
 
-  // Submit Handler (Create / Update)
   document.getElementById("facultyForm").addEventListener("submit", async e => {
     e.preventDefault();
-    try { AUTH.requireAdmin(); } catch (err) { return; } // Allows Admin and Faculty access
-    
+    try { AUTH.requireAdmin(); } catch (err) { return; }
     const f = e.target;
     const editId = f.edit_id.value ? parseInt(f.edit_id.value, 10) : null;
     const faculty_id = f.faculty_id.value.trim();
-
     const payload = {
       faculty_id,
       first_name: f.first_name.value.trim(),
-      last_name: f.last_name.value.trim(),
+      last_name: f.last_name.value.trim() || null,
       email: f.email.value.trim() || null,
       phone: f.phone.value.trim() || null,
       department: f.department.value.trim() || null,
       designation: f.designation.value.trim() || null
     };
-
     try {
       if (editId) {
-        // Update existing entry
         await DB.update("faculty", editId, payload);
         Flash.push("Faculty member updated successfully.", "success");
       } else {
-        // Create new entry
         if (await DB.findOne("faculty", r => r.faculty_id === faculty_id)) {
           Flash.push("Faculty ID already exists.", "danger");
           route();
@@ -1572,23 +1513,17 @@ async function pageFaculty() {
         await DB.insert("faculty", payload);
         Flash.push("Faculty member added successfully.", "success");
       }
-    } catch (err) {
-      Flash.push(err.message, "danger");
-    }
+    } catch (err) { Flash.push(err.message, "danger"); }
     route();
   });
 
-  // Edit Button Event Handling
   document.querySelectorAll("[data-edit]").forEach(el => {
     el.addEventListener("click", e => {
       e.preventDefault();
       try { AUTH.requireAdmin(); } catch (err) { return; }
-      
       const id = parseInt(el.getAttribute("data-edit"), 10);
       const item = faculty.find(f => Number(f.id) === id);
       if (!item) return;
-
-      // Populate Form Fields
       document.getElementById("edit_id").value = item.id;
       document.getElementById("field_faculty_id").value = item.faculty_id || "";
       document.getElementById("field_first_name").value = item.first_name || "";
@@ -1597,33 +1532,23 @@ async function pageFaculty() {
       document.getElementById("field_phone").value = item.phone || "";
       document.getElementById("field_department").value = item.department || "";
       document.getElementById("field_designation").value = item.designation || "";
-
-      // Update Form UI state
       document.getElementById("formHeader").textContent = "Edit Faculty Member";
       document.getElementById("saveBtn").textContent = "Update Faculty";
       document.getElementById("cancelBtn").classList.remove("hidden");
-      
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     });
   });
 
-  // Cancel Edit Mode Handler
-  document.getElementById("cancelBtn").addEventListener("click", () => {
-    route();
-  });
+  document.getElementById("cancelBtn").addEventListener("click", () => route());
 
-  // Delete Handler
   document.querySelectorAll("[data-del]").forEach(el => {
     el.addEventListener("click", e => {
       e.preventDefault();
       try { AUTH.requireAdmin(); } catch (err) { return; }
-      
       const id = parseInt(el.getAttribute("data-del"), 10);
       H.confirm("Delete this faculty member?", async () => {
         try {
           await DB.remove("faculty", id);
-          
-          // Unlink deleted faculty from assigned courses
           const courses = await DB.getTable("courses");
           for (const c of courses) {
             if (Number(c.faculty_id) === id) {
@@ -1631,9 +1556,7 @@ async function pageFaculty() {
             }
           }
           Flash.push("Faculty member deleted.", "info");
-        } catch (err) {
-          Flash.push(err.message, "danger");
-        }
+        } catch (err) { Flash.push(err.message, "danger"); }
         route();
       });
     });
@@ -1718,7 +1641,6 @@ async function pageEnrollment() {
   enrollments.sort((a, b) => b.id - a.id);
   const studentMap = new Map(students.map(s => [Number(s.id), s]));
   const courseMap = new Map(courses.map(c => [Number(c.id), c]));
-
   const studentOpts = students.map(s => `<option value="${s.id}">${H.esc(H.studentLabel(s))}</option>`).join("");
   const courseOpts = courses.map(c => `<option value="${c.id}">${H.esc(H.courseLabel(c))}</option>`).join("");
 
@@ -1870,7 +1792,6 @@ async function pageExams() {
   const courseMap = new Map(courses.map(c => [Number(c.id), c]));
   const studentMap = new Map(students.map(s => [Number(s.id), s]));
   const examMap = new Map(exams.map(x => [Number(x.id), x]));
-
   const courseOpts = courses.map(c => `<option value="${c.id}">${H.esc(H.courseLabel(c))}</option>`).join("");
   const examOpts = exams.map(x => {
     const c = courseMap.get(Number(x.course_id));
@@ -1915,7 +1836,6 @@ async function pageExams() {
         <div class="form-group"><label>Max Marks *</label><input name="max_marks" type="number" value="100" min="1" required></div>
       </div><button type="submit" class="btn btn-primary">Create Exam</button></form>
     </div></div>
-    
     <div class="card"><div class="card-header">Enter Student Result</div><div class="card-body">
       <form id="addResultForm"><div class="form-grid">
         <div class="form-group"><label>Exam *</label><select name="exam_id" required><option value="">Select Exam</option>${examOpts}</select></div>
@@ -1923,7 +1843,6 @@ async function pageExams() {
         <div class="form-group"><label>Marks Obtained *</label><input name="marks_obtained" type="number" step="0.5" required min="0"></div>
       </div><button type="submit" class="btn btn-primary">Save Result</button></form>
     </div></div>
-
     <div class="card"><div class="card-header">Scheduled Exams (${exams.length})</div><div class="card-body table-wrap">${examRows}</div></div>
     <div class="card"><div class="card-header">Recorded Results (${results.length})</div><div class="card-body table-wrap">${resultRows}</div></div>`;
 
@@ -1951,7 +1870,6 @@ async function pageExams() {
     const exam = examMap.get(exam_id);
     const max = exam ? Number(exam.max_marks) : 100;
     const grade = calcGrade(marks, max);
-
     try {
       await DB.insert("results", { exam_id, student_id, marks_obtained: marks, grade });
       Flash.push("Result recorded.", "success");
@@ -1998,7 +1916,6 @@ async function pageLibrary() {
   issues.sort((a, b) => b.id - a.id);
   const bookMap = new Map(books.map(b => [Number(b.id), b]));
   const studentMap = new Map(students.map(s => [Number(s.id), s]));
-
   const bookOpts = books.filter(b => Number(b.available_copies) > 0)
     .map(b => `<option value="${b.id}">${H.esc(b.title)} (Available: ${b.available_copies})</option>`).join("");
   const studentOpts = students.map(s => `<option value="${s.id}">${H.esc(H.studentLabel(s))}</option>`).join("");
@@ -2043,7 +1960,6 @@ async function pageLibrary() {
         <div class="form-group"><label>Total Copies *</label><input name="total_copies" type="number" value="1" min="1" required></div>
       </div><button type="submit" class="btn btn-primary">Add Book</button></form>
     </div></div>
-
     <div class="card"><div class="card-header">Issue Book to Student</div><div class="card-body">
       <form id="issueBookForm"><div class="form-grid">
         <div class="form-group"><label>Book *</label><select name="book_id" required><option value="">Select Book</option>${bookOpts}</select></div>
@@ -2051,7 +1967,6 @@ async function pageLibrary() {
         <div class="form-group"><label>Due Date *</label><input name="due_date" type="date" required></div>
       </div><button type="submit" class="btn btn-primary">Issue Book</button></form>
     </div></div>
-
     <div class="card"><div class="card-header">Book Inventory (${books.length})</div><div class="card-body table-wrap">${bookRows}</div></div>
     <div class="card"><div class="card-header">Issued Books Log (${issues.length})</div><div class="card-body table-wrap">${issueRows}</div></div>`;
 
@@ -2078,11 +1993,9 @@ async function pageLibrary() {
     const book_id = parseInt(f.book_id.value, 10);
     const student_id = parseInt(f.student_id.value, 10);
     const book = bookMap.get(book_id);
-
     if (!book || Number(book.available_copies) <= 0) {
       Flash.push("Book is not available for issue.", "danger"); route(); return;
     }
-
     try {
       await DB.insert("issues", {
         book_id, student_id, issue_date: DB.today(), due_date: f.due_date.value,
@@ -2146,7 +2059,6 @@ async function pageLibrary() {
   });
 }
 
-
 async function pageHostel() {
   await showAppShell("hostel");
   const [rooms, allocations, students] = await Promise.all([
@@ -2156,7 +2068,6 @@ async function pageHostel() {
   allocations.sort((a, b) => b.id - a.id);
   const roomMap = new Map(rooms.map(r => [Number(r.id), r]));
   const studentMap = new Map(students.map(s => [Number(s.id), s]));
-
   const roomOpts = rooms.filter(r => Number(r.occupied || 0) < Number(r.capacity || 0))
     .map(r => `<option value="${r.id}">Room ${H.esc(r.room_number)} (${H.esc(r.block || "Main")}) - Spot: ${r.occupied}/${r.capacity}</option>`).join("");
   const studentOpts = students.map(s => `<option value="${s.id}">${H.esc(H.studentLabel(s))}</option>`).join("");
@@ -2204,14 +2115,12 @@ async function pageHostel() {
         <div class="form-group"><label>Capacity *</label><input name="capacity" type="number" value="2" min="1" required></div>
       </div><button type="submit" class="btn btn-primary">Add Room</button></form>
     </div></div>
-
     <div class="card"><div class="card-header">Allocate Room to Student</div><div class="card-body">
       <form id="allocForm"><div class="form-grid">
         <div class="form-group"><label>Room *</label><select name="room_id" required><option value="">Select Room</option>${roomOpts}</select></div>
         <div class="form-group"><label>Student *</label><select name="student_id" required><option value="">Select Student</option>${studentOpts}</select></div>
       </div><button type="submit" class="btn btn-primary">Allocate Room</button></form>
     </div></div>
-
     <div class="card"><div class="card-header">Room List (${rooms.length})</div><div class="card-body table-wrap">${roomRows}</div></div>
     <div class="card"><div class="card-header">Room Allocations (${allocations.length})</div><div class="card-body table-wrap">${allocRows}</div></div>`;
 
@@ -2236,14 +2145,12 @@ async function pageHostel() {
     const room_id = parseInt(f.room_id.value, 10);
     const student_id = parseInt(f.student_id.value, 10);
     const room = roomMap.get(room_id);
-
     if (await DB.findOne("allocations", a => Number(a.student_id) === student_id && a.status === "Active")) {
       Flash.push("Student already has an active room allocation.", "danger"); route(); return;
     }
     if (!room || Number(room.occupied || 0) >= Number(room.capacity)) {
       Flash.push("Selected room is full.", "danger"); route(); return;
     }
-
     try {
       await DB.insert("allocations", {
         room_id, student_id, allocate_date: DB.today(), status: "Active"
@@ -2346,7 +2253,6 @@ async function pageProfile() {
     const f = e.target;
     const name = f.full_name.value.trim();
     const fileInput = document.getElementById("avatarInput");
-
     let avatarData = session.avatar_data;
     if (fileInput.files && fileInput.files[0]) {
       avatarData = await new Promise(resolve => {
@@ -2355,11 +2261,9 @@ async function pageProfile() {
         reader.readAsDataURL(fileInput.files[0]);
       });
     }
-
     session.full_name = name || session.username;
     session.avatar_data = avatarData;
     localStorage.setItem("ums_session", JSON.stringify(session));
-
     Flash.push("Profile updated successfully.", "success");
     route();
   });
@@ -2456,98 +2360,6 @@ window.addEventListener("DOMContentLoaded", () => {
       chatMsgs.scrollTop = chatMsgs.scrollHeight;
     });
   }
-});
-</script>
-</body>
-</html>
-
-
-/* ============================================================
-   ROUTER EXECUTION
-   ============================================================ */
-const ROUTES = {
-  login: pageLogin,
-  signup: pageSignup,
-  dashboard: pageDashboard,
-  myfees: pageMyFees,
-  myidcard: pageMyIdCard,
-  admitcard: pageAdmitCard,
-  accounts: pageAccounts,
-  idcards: pageIdCards,
-  students: pageStudents,
-  faculty: pageFaculty,
-  courses: pageCourses,
-  enrollment: pageEnrollment,
-  fees: pageFees,
-  exams: pageExams,
-  library: pageLibrary,
-  hostel: pageHostel,
-  profile: pageProfile
-};
-
-function route() {
-  const r = getRoute();
-  const handler = ROUTES[r] || ROUTES.dashboard;
-  handler().catch(err => {
-    if (err.message !== "redirect") {
-      console.error(err);
-      Flash.push("System error: " + err.message, "danger");
-    }
-  });
-}
-
-window.addEventListener("hashchange", route);
-window.addEventListener("DOMContentLoaded", () => {
-  if (!UMS_CONFIG.SCRIPT_URL || UMS_CONFIG.SCRIPT_URL.indexOf("PASTE_YOUR") !== -1) {
-    document.getElementById("configBanner").classList.remove("hidden");
-  }
-  
-  // Initialize AI Widget Toggle Handlers
-  const chatBox = document.getElementById("ai-chat-box");
-  const chatBtn = document.getElementById("ai-chat-button");
-  const chatClose = document.getElementById("ai-chat-close");
-
-  chatBtn.addEventListener("click", () => {
-    chatBox.style.display = chatBox.style.display === "flex" ? "none" : "flex";
-  });
-  chatClose.addEventListener("click", () => {
-    chatBox.style.display = "none";
-  });
-
-  // Handle AI Chat submissions via Google Apps Script endpoint
-  document.getElementById("ai-chat-form").addEventListener("submit", async e => {
-    e.preventDefault();
-    const input = document.getElementById("ai-chat-input");
-    const msg = input.value.trim();
-    if (!msg) return;
-
-    const msgsBox = document.getElementById("ai-chat-messages");
-    
-    // Add user message to UI
-    const uDiv = document.createElement("div");
-    uDiv.className = "ai-msg ai-msg-user";
-    uDiv.textContent = msg;
-    msgsBox.appendChild(uDiv);
-    input.value = "";
-    msgsBox.scrollTop = msgsBox.scrollHeight;
-
-    // Loading indicator
-    const aDiv = document.createElement("div");
-    aDiv.className = "ai-msg ai-msg-assistant";
-    aDiv.textContent = "Thinking...";
-    msgsBox.appendChild(aDiv);
-    msgsBox.scrollTop = msgsBox.scrollHeight;
-
-    try {
-      const res = await DB.api("aichat", { prompt: msg });
-      aDiv.textContent = res.reply || "Sorry, I couldn't process your request.";
-    } catch (err) {
-      aDiv.textContent = "Error communicating with AI assistant.";
-    }
-    msgsBox.scrollTop = msgsBox.scrollHeight;
-  });
-
-  route();
 });
 </script>
 </body>
