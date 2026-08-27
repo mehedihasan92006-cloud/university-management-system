@@ -324,7 +324,7 @@
    CONFIG – paste your Google Apps Script Web App URL here
    ============================================================ */
 const UMS_CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbw7X-snOWBeNexu1P_5DEonE7byvlCFBSBrQ-VXV6f_PeCEpGKaXrB2TWIFlZGi-STpYA/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbw28hMp0TcRSnEEDCSlZ0Sj7XZzQvct6MP0tAbNoPJD94F8UppcR6YrR6k5skCLs6f3ug/exec",
   SHOW_LOADING: false
 };
 
@@ -573,7 +573,31 @@ const AUTH = (() => {
    HELPERS
    ============================================================ */
 const H = {
-  dash(v) { return v === undefined || v === null || v === "" ? "—" : v; },
+  dash(v) {
+    if (v === undefined || v === null || v === "") return "—";
+    // Avoid showing "[object Object]" for dates / plain objects from Sheets
+    if (typeof v === "object") {
+      if (Object.prototype.toString.call(v) === "[object Date]" && !isNaN(v.getTime())) {
+        return v.toISOString().slice(0, 10);
+      }
+      if (typeof v.toString === "function") {
+        const s = v.toString();
+        if (s && s !== "[object Object]") return s;
+      }
+      try {
+        if (v.year || v.month || v.day) {
+          // Apps Script-style date object serialized oddly
+          const y = v.year || v.getFullYear?.();
+          const m = String((v.month || (v.getMonth?.() + 1) || 1)).padStart(2, "0");
+          const d = String(v.day || v.getDate?.() || 1).padStart(2, "0");
+          if (y) return y + "-" + m + "-" + d;
+        }
+      } catch (_) {}
+      return "—";
+    }
+    const s = String(v);
+    return s === "[object Object]" ? "—" : s;
+  },
   esc(v) {
     const d = document.createElement("div");
     d.textContent = String(H.dash(v));
@@ -1275,6 +1299,17 @@ async function pageAccounts() {
     return `<span class="flash ${cls}" style="display:inline-block;padding:0.15rem 0.55rem;margin:0;">${H.esc((role || "").toUpperCase())}</span>`;
   };
 
+  const formatCreated = (v) => {
+    if (v === null || v === undefined || v === "") return "—";
+    if (typeof v === "object") {
+      try { return new Date(v).toISOString().slice(0, 10); } catch (_) { return "—"; }
+    }
+    const s = String(v);
+    if (s === "[object Object]") return "—";
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+    return s;
+  };
+
   const rows = users.length
     ? `<table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Student ID</th><th>Faculty ID</th><th>Created</th><th>Actions</th></tr></thead><tbody>
        ${users.map(u => `<tr>
@@ -1284,7 +1319,7 @@ async function pageAccounts() {
          <td>${roleBadge(u.role)}</td>
          <td>${H.esc(u.student_id || "—")}</td>
          <td>${H.esc(u.faculty_id || "—")}</td>
-         <td>${H.esc(u.created_at || "—")}</td>
+         <td>${H.esc(formatCreated(u.created_at))}</td>
          <td>${u.role === "admin" ? "—" : `<a href="#" class="btn btn-danger" data-del="${u.id}">Remove</a>`}</td>
        </tr>`).join("")}
        </tbody></table>`

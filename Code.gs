@@ -128,8 +128,32 @@ function userPhoto(user) {
 }
 
 /** Never send passwords back. Keep student_id — the UI needs it. */
+function formatCellValue(val) {
+  if (val === "" || val === null || val === undefined) return null;
+  // Google Sheets Date objects → "yyyy-MM-dd" (avoids [object Object] in the UI)
+  if (Object.prototype.toString.call(val) === "[object Date]" && !isNaN(val.getTime())) {
+    try {
+      return Utilities.formatDate(val, Session.getScriptTimeZone(), "yyyy-MM-dd");
+    } catch (_) {
+      return val.toISOString().slice(0, 10);
+    }
+  }
+  // Any other non-primitive object would become "[object Object]" in the UI
+  if (typeof val === "object") {
+    try {
+      if (typeof val.getTime === "function" && !isNaN(val.getTime())) {
+        return Utilities.formatDate(val, Session.getScriptTimeZone(), "yyyy-MM-dd");
+      }
+    } catch (_) {}
+    return String(val);
+  }
+  return val;
+}
+
 function sanitizeData(obj) {
-  if (!obj || typeof obj !== "object") return obj;
+  if (obj === null || obj === undefined) return obj;
+  if (Object.prototype.toString.call(obj) === "[object Date]") return formatCellValue(obj);
+  if (typeof obj !== "object") return obj;
   if (Array.isArray(obj)) return obj.map(item => sanitizeData(item));
   const cleanObj = {};
   for (let key in obj) {
@@ -185,7 +209,7 @@ function sheetToObjects(sheet) {
     const obj = {};
     let empty = true;
     for (let j = 0; j < headers.length; j++) {
-      let val = data[i][j];
+      let val = formatCellValue(data[i][j]);
       if (val !== "" && val !== null && val !== undefined) empty = false;
       obj[headers[j]] = val === "" ? null : val;
     }
@@ -213,7 +237,29 @@ function findRowIndex(sheet, id) {
 }
 
 function listRows(table) {
-  return { ok: true, data: sheetToObjects(getSheet(table)) };
+  const data = sheetToObjects(getSheet(table));
+  // Back-fill missing Student / Faculty IDs on older user accounts
+  if (table === "users") {
+    data.forEach(u => {
+      const role = String(u.role || "").toLowerCase();
+      if (role === "student" && !u.student_id) {
+        const code = nextCode("student");
+        updateRow("users", u.id, { student_id: code });
+        u.student_id = code;
+      }
+      if (role === "faculty" && !u.faculty_id) {
+        const code = nextCode("faculty");
+        updateRow("users", u.id, { faculty_id: code });
+        u.faculty_id = code;
+      }
+      // Clean broken created_at values like "[object Object]"
+      if (u.created_at && String(u.created_at) === "[object Object]") {
+        updateRow("users", u.id, { created_at: "" });
+        u.created_at = null;
+      }
+    });
+  }
+  return { ok: true, data: data };
 }
 
 function getRow(table, id) {
@@ -323,7 +369,7 @@ function signupUser(data) {
     return { ok: false, error: "An account with this email already exists." };
   }
 
-  // Match a pre-issued ID card by email + type (if available)
+  // Prefer a pre-issued ID card matching this email + role
   const cards = sheetToObjects(getSheet("id_cards"));
   const matched = cards.find(c =>
     c.recipient_email &&
@@ -341,14 +387,16 @@ function signupUser(data) {
     created_at: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd")
   };
 
-  if (matched) {
-    if (role === "student") payload.student_id = matched.code;
-    if (role === "faculty") payload.faculty_id = matched.code;
+  // Auto-assign Student ID or Faculty ID
+  if (role === "student") {
+    payload.student_id = matched ? matched.code : nextCode("student");
+  } else if (role === "faculty") {
+    payload.faculty_id = matched ? matched.code : nextCode("faculty");
   }
 
   const result = insertRow("users", payload);
 
-  // Mark the ID card as used
+  // Mark pre-issued card as used
   if (matched) {
     updateRow("id_cards", matched.id, {
       status: "used",
@@ -357,9 +405,57 @@ function signupUser(data) {
     });
   }
 
+  // Create matching profile row in students / faculty sheet
+  const nameParts = String(payload.full_name || "").trim().split(/\s+/);
+  const first_name = nameParts[0] || payload.username;
+  const last_name = nameParts.slice(1).join(" ") || "";
+  const today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd");
+
+  if (role === "student" && payload.student_id) {
+    const already = sheetToObjects(getSheet("students")).some(
+      s => String(s.student_id) === String(payload.student_id) ||
+           (s.email && String(s.email).toLowerCase() === email.toLowerCase())
+    );
+    if (!already) {
+      insertRow("students", {
+        student_id: payload.student_id,
+        first_name: first_name,
+        last_name: last_name,
+        email: email,
+        phone: "",
+        department: "",
+        year: "",
+        gender: "",
+        address: "",
+        created_at: today
+      });
+    }
+  }
+
+  if (role === "faculty" && payload.faculty_id) {
+    const already = sheetToObjects(getSheet("faculty")).some(
+      f => String(f.faculty_id) === String(payload.faculty_id) ||
+           (f.email && String(f.email).toLowerCase() === email.toLowerCase())
+    );
+    if (!already) {
+      insertRow("faculty", {
+        faculty_id: payload.faculty_id,
+        first_name: first_name,
+        last_name: last_name,
+        email: email,
+        phone: "",
+        department: "",
+        designation: "",
+        created_at: today
+      });
+    }
+  }
+
   return {
     ok: true,
-    message: "Account created successfully!",
+    message: "Account created successfully! Your " +
+      (role === "faculty" ? "Faculty ID is " + payload.faculty_id :
+       role === "student" ? "Student ID is " + payload.student_id : "account is ready") + ".",
     user: {
       id: result.id,
       email: email,
@@ -375,9 +471,10 @@ function signupUser(data) {
 /** Generate next Student (STU###) or Faculty (FAC###) ID automatically. */
 function nextCode(type) {
   const prefix = type === "faculty" ? "FAC" : "STU";
-  const cards = sheetToObjects(getSheet("id_cards"));
   let max = 0;
-  cards.forEach(c => {
+
+  // From id_cards
+  sheetToObjects(getSheet("id_cards")).forEach(c => {
     if (String(c.type || "").toLowerCase() !== type) return;
     const m = String(c.code || "").match(new RegExp("^" + prefix + "(\\d+)$", "i"));
     if (m) {
@@ -385,7 +482,18 @@ function nextCode(type) {
       if (n > max) max = n;
     }
   });
-  // Also check existing students/faculty sheets so codes stay unique
+
+  // From users sheet
+  sheetToObjects(getSheet("users")).forEach(u => {
+    const code = type === "faculty" ? u.faculty_id : u.student_id;
+    const m = String(code || "").match(new RegExp("^" + prefix + "(\\d+)$", "i"));
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (n > max) max = n;
+    }
+  });
+
+  // From students / faculty sheets
   if (type === "student") {
     sheetToObjects(getSheet("students")).forEach(s => {
       const m = String(s.student_id || "").match(/^STU(\d+)$/i);
@@ -403,8 +511,8 @@ function nextCode(type) {
       }
     });
   }
-  const next = max + 1;
-  return prefix + String(next).padStart(3, "0");
+
+  return prefix + String(max + 1).padStart(3, "0");
 }
 
 /**
@@ -421,7 +529,6 @@ function issueId(type, label, recipientEmail) {
     return { ok: false, error: "Recipient email is required." };
   }
 
-  // Prevent duplicate available card for same email + type
   const cards = sheetToObjects(getSheet("id_cards"));
   const dup = cards.find(c =>
     c.recipient_email &&
