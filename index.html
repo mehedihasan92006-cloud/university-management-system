@@ -324,7 +324,7 @@
    CONFIG – paste your Google Apps Script Web App URL here
    ============================================================ */
 const UMS_CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzL5l5f0GtuR3PWeNNOewBPiNDlvHpwDBtY4dDNP8BXnsJPm39ySEQWKtthUGVBqYtVgQ/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzezrwiO_SUAr5TVlDE6J7ZaL3HfwYvricy2bc3ArOCIWemPwEogPYpduzXVs7j6EikHQ/exec",
   SHOW_LOADING: false
 };
 
@@ -481,16 +481,19 @@ const DB = (() => {
    ============================================================ */
 const AUTH = (() => {
   const SESSION_KEY = "ums_session";
+  // One-time cleanup: sessions used to live in localStorage (never expired).
+  // Remove any leftover so an old login doesn't linger after this update.
+  try { localStorage.removeItem(SESSION_KEY); } catch (_) {}
 
   function getSession() {
-    const raw = localStorage.getItem(SESSION_KEY);
+    const raw = sessionStorage.getItem(SESSION_KEY);
     return raw ? JSON.parse(raw) : null;
   }
   function setSession(session) {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
   }
   function clearSession() {
-    localStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_KEY);
   }
   function isLoggedIn() { return !!getSession(); }
   function isAdmin() {
