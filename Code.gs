@@ -29,7 +29,7 @@ const HEADERS = {
   issues:       ["id", "book_id", "student_id", "issue_date", "due_date", "return_date", "status"],
   rooms:        ["id", "room_number", "block", "capacity", "occupied"],
   allocations:  ["id", "room_id", "student_id", "allocate_date", "status"],
-  id_cards:     ["id", "code", "type", "label", "status", "issued_date", "used_by", "used_date"]
+  id_cards:     ["id", "code", "type", "label", "recipient_email", "status", "issued_date", "email_sent_date", "used_by", "used_date"]
 };
 
 function doGet(e) {
@@ -81,7 +81,10 @@ function handleRequest(e) {
         result = signupUser(body.data || {});
         break;
       case "issueid":
-        result = issueId(body.type, body.label);
+        result = issueId(body.type, body.label, body.recipientEmail);
+        break;
+      case "sendidemail":
+        result = sendIdEmail(body.id);
         break;
       case "seedadmin":
         result = ensureDefaultAdmin();
@@ -284,14 +287,28 @@ function loginUser(usernameOrEmail, password, loginType) {
   };
 }
 
-function issueId(type, label) {
+function issueId(type, label, recipientEmail) {
   type = String(type || "").trim().toLowerCase();
   if (type !== "student" && type !== "faculty") {
     return { ok: false, error: "Invalid ID type. Choose Student or Faculty." };
   }
+  recipientEmail = String(recipientEmail || "").trim();
+  if (!recipientEmail) {
+    return { ok: false, error: "Recipient email is required so the signup can be auto-matched." };
+  }
 
   const prefix = type === "student" ? "STU" : "FAC";
   const rows = sheetToObjects(getSheet("id_cards"));
+
+  const dupe = rows.some(function(r) {
+    return r.type === type &&
+      String(r.recipient_email || "").toLowerCase() === recipientEmail.toLowerCase() &&
+      r.status !== "used";
+  });
+  if (dupe) {
+    return { ok: false, error: "This email already has an unused " + (type === "student" ? "Student" : "Faculty") + " ID issued." };
+  }
+
   let maxNum = 0;
   rows.forEach(function(r) {
     if (r.type !== type) return;
@@ -307,10 +324,40 @@ function issueId(type, label) {
     code: code,
     type: type,
     label: (label || "").trim() || null,
+    recipient_email: recipientEmail,
     status: "available",
     issued_date: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd")
   });
   return { ok: true, code: code, id: result.id };
+}
+
+function sendIdEmail(id) {
+  const cardId = Number(id);
+  const rows = sheetToObjects(getSheet("id_cards"));
+  const card = rows.find(function(c) { return Number(c.id) === cardId; });
+
+  if (!card) return { ok: false, error: "ID not found." };
+  if (!card.recipient_email) return { ok: false, error: "No recipient email saved for this ID." };
+  if (card.status === "used") return { ok: false, error: "This ID has already been used — no need to send it." };
+
+  const typeLabel = card.type === "student" ? "Student" : "Faculty";
+  const subject = "Your " + typeLabel + " ID for Mehedi's University Management System";
+  const body =
+    "Hello" + (card.label ? " " + card.label : "") + ",\n\n" +
+    "Your " + typeLabel + " ID is: " + card.code + "\n\n" +
+    "Go to the Sign Up page, choose \"" + typeLabel + " Sign Up\", and enter this ID along with your " +
+    "email and a password to create your account.\n\n" +
+    "Once your account is created, sign in from the \"" + typeLabel + " Login\" tab.\n\n" +
+    "This ID can only be used once.\n\n" +
+    "— University Management System";
+
+  MailApp.sendEmail(card.recipient_email, subject, body);
+
+  updateRow("id_cards", card.id, {
+    email_sent_date: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd")
+  });
+
+  return { ok: true, message: "Email sent to " + card.recipient_email };
 }
 
 function signupUser(data) {
@@ -321,28 +368,33 @@ function signupUser(data) {
 
   const identifierField = role === "student" ? "student_id" : "faculty_id";
   const identifierLabel = role === "student" ? "Student ID" : "Faculty ID";
-  const identifier = String(data[identifierField] || data.identifier || "").trim();
   const email = (data.email || "").trim();
   const password = data.password || "";
   const full_name = (data.full_name || "").trim();
 
-  if (!identifier || !email || !password) {
-    return { ok: false, error: identifierLabel + ", email and password are required." };
+  if (!email || !password) {
+    return { ok: false, error: "Email and password are required." };
   }
   if (password.length < 6) {
     return { ok: false, error: "Password must be at least 6 characters." };
   }
 
-  // The ID must already exist as an "available" card issued by an admin
-  // in the ID Cards tab — this stops anyone from typing in a made-up ID.
+  // No manual ID entry anymore — match this signup to a card an admin already
+  // issued to this exact email in the ID Cards tab.
   const idCards = sheetToObjects(getSheet("id_cards"));
-  const card = idCards.find(function(c) { return c.type === role && String(c.code) === identifier; });
+  const card = idCards.find(function(c) {
+    return c.type === role &&
+      String(c.recipient_email || "").toLowerCase() === email.toLowerCase() &&
+      c.status !== "used";
+  });
   if (!card) {
-    return { ok: false, error: "This " + identifierLabel + " has not been issued. Please contact the administrator." };
+    return {
+      ok: false,
+      error: "No available " + identifierLabel + " has been issued to this email. Please contact the administrator."
+    };
   }
-  if (card.status === "used") {
-    return { ok: false, error: "This " + identifierLabel + " has already been used to create an account." };
-  }
+
+  const identifier = card.code;
 
   const users = sheetToObjects(getSheet("users"));
   const duplicate = users.some(u => u.username === identifier || u.email === email);
@@ -370,7 +422,7 @@ function signupUser(data) {
 
   return {
     ok: true,
-    message: "Account created successfully! Please login using " + identifierLabel + " Login.",
+    message: "Account created successfully! Your " + identifierLabel + " is " + identifier + ". Please login using " + identifierLabel + " Login.",
     id: result.id
   };
 }
