@@ -438,8 +438,8 @@ const DB = (() => {
     try { await api("seedadmin"); } catch (e) { console.warn("seedadmin:", e.message); }
   }
 
-  async function loginRemote(usernameOrEmail, password) {
-    return api("login", { usernameOrEmail, password });
+  async function loginRemote(usernameOrEmail, password, loginType) {
+    return api("login", { usernameOrEmail, password, loginType });
   }
 
   async function signupRemote(data) {
@@ -475,7 +475,7 @@ const AUTH = (() => {
   }
 
   async function login(usernameOrEmail, password, loginType) {
-    const res = await DB.loginRemote(usernameOrEmail, password);
+    const res = await DB.loginRemote(usernameOrEmail, password, loginType || "administrative");
     if (res.ok && res.user) {
       setSession({
         user_id: res.user.id,
@@ -492,15 +492,19 @@ const AUTH = (() => {
     return { ok: false, message: res.error || "Invalid credentials" };
   }
 
-  async function signup({ username, email, full_name, password, confirm_password }) {
-    username = (username || "").trim();
+  async function signup({ role, identifier, full_name, email, password, confirm_password }) {
+    role = (role || "student").trim().toLowerCase();
+    identifier = (identifier || "").trim();
     email = (email || "").trim();
     full_name = (full_name || "").trim();
-    if (!username || !email || !password) return { ok: false, message: "All required fields must be filled." };
+    const idLabel = role === "faculty" ? "Faculty ID" : "Student ID";
+    if (!identifier || !email || !password) return { ok: false, message: idLabel + ", email and password are required." };
     if (password !== confirm_password) return { ok: false, message: "Passwords do not match." };
     if (password.length < 6) return { ok: false, message: "Password must be at least 6 characters." };
     try {
-      const res = await DB.signupRemote({ username, email, full_name: full_name || username, password });
+      const data = { role, email, full_name: full_name || identifier, password };
+      data[role === "faculty" ? "faculty_id" : "student_id"] = identifier;
+      const res = await DB.signupRemote(data);
       if (res.ok) return { ok: true, message: res.message || "Account created! Please login." };
       return { ok: false, message: res.error || "Signup failed" };
     } catch (e) {
@@ -575,6 +579,7 @@ function calcGrade(marks, max) {
    ============================================================ */
 const NAV = [
   { key: "dashboard", label: "Dashboard" },
+  { key: "idcards", label: "ID Cards" },
   { key: "students", label: "Students" },
   { key: "faculty", label: "Faculty" },
   { key: "courses", label: "Courses" },
@@ -702,8 +707,8 @@ async function pageLogin() {
         <button type="button" class="login-type active" data-login-type="administrative">Administrative Login</button>
       </div>
       <form id="loginForm">
-        <div class="form-group"><label>Username or Email</label>
-          <input type="text" id="username" required autofocus></div>
+        <div class="form-group"><label id="loginIdLabel">Username or Email</label>
+          <input type="text" id="username" placeholder="" required autofocus></div>
         <div class="form-group"><label>Password</label>
           <input type="password" id="password" required></div>
         <button type="submit" class="btn btn-primary btn-full" id="loginBtn">Sign In</button>
@@ -712,11 +717,19 @@ async function pageLogin() {
     </div></div>`;
   Flash.render(document.getElementById("flashArea"));
   DB.seedIfNeeded().catch(() => {});
+  const LOGIN_TYPE_META = {
+    student: { label: "Student ID or Email", placeholder: "STU001" },
+    faculty: { label: "Faculty ID or Email", placeholder: "FAC001" },
+    administrative: { label: "Username or Email", placeholder: "" }
+  };
   let selectedLoginType = "administrative";
   document.querySelectorAll("[data-login-type]").forEach(typeButton => {
     typeButton.addEventListener("click", () => {
       selectedLoginType = typeButton.getAttribute("data-login-type");
       document.querySelectorAll("[data-login-type]").forEach(button => button.classList.toggle("active", button === typeButton));
+      const meta = LOGIN_TYPE_META[selectedLoginType];
+      document.getElementById("loginIdLabel").textContent = meta.label;
+      document.getElementById("username").placeholder = meta.placeholder;
     });
   });
   document.getElementById("loginForm").addEventListener("submit", async e => {
@@ -750,27 +763,56 @@ async function pageSignup() {
   document.getElementById("app").innerHTML = `
     <div class="auth-wrap"><div class="auth-box">
       <h1>🎓 Create Account</h1>
-      <p class="subtitle">Sign up as a new user</p>
+      <p class="subtitle">Sign up as a Student or Faculty member</p>
       <div id="flashArea"></div>
+      <div class="login-types" role="tablist" aria-label="Signup type">
+        <button type="button" class="login-type active" data-signup-type="student">Student Sign Up</button>
+        <button type="button" class="login-type" data-signup-type="faculty">Faculty Sign Up</button>
+      </div>
       <form id="signupForm">
         <div class="form-group"><label>Full Name</label><input type="text" id="full_name"></div>
-        <div class="form-group"><label>Username *</label><input type="text" id="username" required></div>
+        <div class="form-group"><label id="signupIdLabel">Student ID *</label>
+          <input type="text" id="identifier" placeholder="STU001" required></div>
         <div class="form-group"><label>Email *</label><input type="email" id="email" required></div>
         <div class="form-group"><label>Password *</label><input type="password" id="password" required minlength="6"></div>
         <div class="form-group"><label>Confirm Password *</label><input type="password" id="confirm_password" required></div>
         <button type="submit" class="btn btn-primary btn-full" id="signupBtn">Sign Up</button>
       </form>
-      <p class="demo-hint">New accounts are <strong>User</strong> (view only).</p>
+      <p class="demo-hint" id="signupHint">Sign up with the Student ID given by your department. You'll only be able to sign in through Student Login.</p>
       <div class="auth-footer">Already have an account? <a href="#login">Sign In</a></div>
     </div></div>`;
   Flash.render(document.getElementById("flashArea"));
+  const SIGNUP_TYPE_META = {
+    student: {
+      label: "Student ID *",
+      placeholder: "STU001",
+      hint: "Sign up with the Student ID given by your department. You'll only be able to sign in through Student Login."
+    },
+    faculty: {
+      label: "Faculty ID *",
+      placeholder: "FAC001",
+      hint: "Sign up with the Faculty ID given by your department. You'll only be able to sign in through Faculty Login."
+    }
+  };
+  let selectedSignupType = "student";
+  document.querySelectorAll("[data-signup-type]").forEach(typeButton => {
+    typeButton.addEventListener("click", () => {
+      selectedSignupType = typeButton.getAttribute("data-signup-type");
+      document.querySelectorAll("[data-signup-type]").forEach(button => button.classList.toggle("active", button === typeButton));
+      const meta = SIGNUP_TYPE_META[selectedSignupType];
+      document.getElementById("signupIdLabel").textContent = meta.label;
+      document.getElementById("identifier").placeholder = meta.placeholder;
+      document.getElementById("signupHint").textContent = meta.hint;
+    });
+  });
   document.getElementById("signupForm").addEventListener("submit", async e => {
     e.preventDefault();
     const btn = document.getElementById("signupBtn");
     btn.disabled = true; btn.textContent = "Creating…";
     const result = await AUTH.signup({
+      role: selectedSignupType,
+      identifier: document.getElementById("identifier").value,
       full_name: document.getElementById("full_name").value,
-      username: document.getElementById("username").value,
       email: document.getElementById("email").value,
       password: document.getElementById("password").value,
       confirm_password: document.getElementById("confirm_password").value
@@ -816,6 +858,82 @@ async function pageDashboard() {
     </div>
     <div class="card"><div class="card-header">Recently Added Students</div>
     <div class="card-body table-wrap">${recentRows}</div></div>`;
+}
+
+async function pageIdCards() {
+  await showAppShell("idcards");
+  const cards = (await DB.getTable("id_cards")).slice().sort((a, b) => b.id - a.id);
+  const rows = cards.length
+    ? `<table><thead><tr><th>Code</th><th>Type</th><th>Label</th><th>Status</th><th>Issued</th><th>Used</th><th>Actions</th></tr></thead><tbody>
+       ${cards.map(c => `<tr>
+         <td><strong>${H.esc(c.code)}</strong></td>
+         <td>${c.type === "student" ? "Student" : "Faculty"}</td>
+         <td>${H.esc(c.label || "—")}</td>
+         <td>${c.status === "used"
+            ? '<span class="flash flash-warning" style="display:inline-block;padding:0.15rem 0.55rem;margin:0;">Used</span>'
+            : '<span class="flash flash-success" style="display:inline-block;padding:0.15rem 0.55rem;margin:0;">Available</span>'}</td>
+         <td>${H.esc(c.issued_date || "—")}</td>
+         <td>${H.esc(c.used_date || "—")}</td>
+         <td>${c.status === "used" ? "—" : `<a href="#" class="btn btn-danger" data-del="${c.id}">Delete</a>`}</td>
+       </tr>`).join("")}
+       </tbody></table>`
+    : `<p class="empty">No IDs issued yet.</p>`;
+
+  document.getElementById("pageContent").innerHTML = `
+    <h1 class="page-title">ID Cards</h1>
+    <div class="card"><div class="card-header">Issue a New ID</div><div class="card-body">
+      <p style="color:#9ca3af;font-size:0.85rem;margin-bottom:0.9rem;">
+        Generate a Student ID or Faculty ID here first. A person can only sign up using an ID that already
+        appears as <strong>Available</strong> below, and each ID can be used to create one account.
+      </p>
+      <form id="issueForm"><div class="form-grid">
+        <div class="form-group"><label>ID Type *</label>
+          <select name="type" required>
+            <option value="student">Student ID</option>
+            <option value="faculty">Faculty ID</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Label (optional)</label>
+          <input name="label" placeholder="e.g. intended recipient's name"></div>
+      </div><button type="submit" class="btn btn-primary">Generate ID</button></form>
+    </div></div>
+    <div class="card"><div class="card-header">All Issued IDs (${cards.length})</div>
+    <div class="card-body table-wrap">${rows}</div></div>`;
+
+  document.getElementById("issueForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    try { AUTH.requireAdmin(); } catch (err) { return; }
+    const f = e.target;
+    const btn = f.querySelector("button[type=submit]");
+    btn.disabled = true;
+    try {
+      const res = await DB.api("issueid", { type: f.type.value, label: f.label.value.trim() });
+      if (res.ok) {
+        DB.invalidate("id_cards");
+        Flash.push(`${f.type.value === "student" ? "Student" : "Faculty"} ID generated: ${res.code}`, "success");
+      } else {
+        Flash.push(res.error || "Could not generate ID.", "danger");
+      }
+    } catch (err) {
+      Flash.push(err.message, "danger");
+    }
+    route();
+  });
+
+  document.querySelectorAll("[data-del]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault();
+      try { AUTH.requireAdmin(); } catch (err) { return; }
+      const id = parseInt(el.getAttribute("data-del"), 10);
+      H.confirm("Delete this unused ID?", async () => {
+        try {
+          await DB.remove("id_cards", id);
+          Flash.push("ID deleted.", "info");
+        } catch (err) { Flash.push(err.message, "danger"); }
+        route();
+      });
+    });
+  });
 }
 
 async function pageStudents() {
@@ -1574,6 +1692,7 @@ const PAGES = {
   signup: pageSignup,
   profile: pageProfile,
   dashboard: pageDashboard,
+  idcards: pageIdCards,
   students: pageStudents,
   faculty: pageFaculty,
   courses: pageCourses,
