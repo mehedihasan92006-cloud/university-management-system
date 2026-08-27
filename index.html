@@ -324,7 +324,7 @@
    CONFIG – paste your Google Apps Script Web App URL here
    ============================================================ */
 const UMS_CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzSun__S_H0hIhX2TxZ6H50OnrrYWyMfE9aBnT8Re8Rbovggj2PeeXlQCgS2H5cJTciMA/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycby69K4vGWZMfbf8TwngZZunw-WC0pzj4chohAGv6vnFFxs0s4xQlLmiN1npZNb3cmrMdQ/exec",
   SHOW_LOADING: false
 };
 
@@ -1340,28 +1340,36 @@ async function pageMyIdCard() {
   const student = await getCurrentStudent(session);
   const cards = await DB.getTable("id_cards");
   const myCard = cards.find(c =>
-    c.type === "student" &&
+    String(c.type || "").toLowerCase() === "student" &&
     (c.code === (session.student_id || session.username) ||
-     (c.recipient_email && session.email && c.recipient_email.toLowerCase() === session.email.toLowerCase()))
+     (c.recipient_email && session.email && String(c.recipient_email).toLowerCase() === session.email.toLowerCase()))
   );
+
+  // Always prefer session / student profile ID so the card shows even without an id_cards row
+  const displayCode = (myCard && myCard.code) || session.student_id || (student && student.student_id) || null;
+  const displayName = session.full_name || (student ? H.fullName(student) : "Student");
+  const issued = (myCard && myCard.issued_date) || (student && student.created_at) || "—";
+  const statusLabel = myCard
+    ? (myCard.status === "used" ? "Active" : (myCard.status || "Available"))
+    : (displayCode ? "Active" : "—");
 
   document.getElementById("pageContent").innerHTML = `
     <h1 class="page-title">My ID Card</h1>
     <div class="card"><div class="card-body" style="text-align:center;padding:2rem;">
-      ${myCard ? `
+      ${displayCode ? `
         <div style="display:inline-block;background:linear-gradient(135deg,#4c1d95,#7c3aed);color:white;padding:1.5rem 2.5rem;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,0.4);min-width:280px;">
           <div style="font-size:0.85rem;opacity:0.85;margin-bottom:0.5rem;">Mehedi's University</div>
-          <div style="font-size:1.6rem;font-weight:800;letter-spacing:0.05em;margin-bottom:0.75rem;">${H.esc(myCard.code)}</div>
-          <div style="font-size:1.05rem;font-weight:600;">${H.esc(session.full_name || (student ? H.fullName(student) : "Student"))}</div>
+          <div style="font-size:1.6rem;font-weight:800;letter-spacing:0.05em;margin-bottom:0.75rem;">${H.esc(displayCode)}</div>
+          <div style="font-size:1.05rem;font-weight:600;">${H.esc(displayName)}</div>
           <div style="font-size:0.85rem;opacity:0.9;margin-top:0.35rem;">Student</div>
           <div style="margin-top:1rem;font-size:0.75rem;opacity:0.8;">
-            Issued: ${H.esc(myCard.issued_date || "—")}<br>
-            Status: ${myCard.status === "used" ? "Active" : H.esc(myCard.status || "—")}
+            Issued: ${H.esc(issued)}<br>
+            Status: ${H.esc(statusLabel)}
           </div>
         </div>
         <p style="margin-top:1.25rem;color:#9ca3af;font-size:0.9rem;">This is your official Student ID. Keep it safe.</p>
       ` : `
-        <div class="flash flash-warning">No ID card record found for your account.</div>
+        <div class="flash flash-warning">No Student ID found for your account. Please contact the administrator to issue one from the ID Cards page.</div>
       `}
     </div></div>`;
 }
@@ -1554,8 +1562,8 @@ async function pageIdCards() {
          <td>${H.esc(c.issued_date || "—")}</td>
          <td>${H.esc(c.email_sent_date || "—")}</td>
          <td style="white-space:nowrap;">
-           ${c.status !== "used" && c.recipient_email ? `<a href="#" class="btn btn-primary" data-send="${c.id}" style="margin-right:0.4rem;">Send Email</a>` : ""}
-           ${c.status !== "used" ? `<a href="#" class="btn btn-danger" data-del="${c.id}">Delete</a>` : ""}
+           ${c.recipient_email ? `<a href="#" class="btn btn-primary" data-send="${c.id}" style="margin-right:0.4rem;">Send Email</a>` : ""}
+           ${String(c.status || "").toLowerCase() !== "used" ? `<a href="#" class="btn btn-danger" data-del="${c.id}">Delete</a>` : ""}
          </td>
        </tr>`).join("")}
        </tbody></table>`

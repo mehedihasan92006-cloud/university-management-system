@@ -401,21 +401,36 @@ function signupUser(data) {
   }
 
   const result = insertRow("users", payload);
+  const today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd");
 
-  // Mark pre-issued card as used
+  // Mark pre-issued card as used, OR create an id_cards row so "My ID Card" always works
   if (matched) {
     updateRow("id_cards", matched.id, {
       status: "used",
       used_by: result.id,
-      used_date: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd")
+      used_date: today
     });
+  } else if (role === "student" || role === "faculty") {
+    const code = role === "faculty" ? payload.faculty_id : payload.student_id;
+    if (code) {
+      insertRow("id_cards", {
+        code: code,
+        type: role,
+        label: payload.full_name || "",
+        recipient_email: email,
+        status: "used",
+        issued_date: today,
+        email_sent_date: "",
+        used_by: result.id,
+        used_date: today
+      });
+    }
   }
 
   // Create matching profile row in students / faculty sheet
   const nameParts = String(payload.full_name || "").trim().split(/\s+/);
   const first_name = nameParts[0] || payload.username;
   const last_name = nameParts.slice(1).join(" ") || "";
-  const today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd");
 
   if (role === "student" && payload.student_id) {
     const already = sheetToObjects(getSheet("students")).some(
@@ -576,9 +591,7 @@ function sendIdEmail(id) {
   if (!row.data) return { ok: false, error: "ID card not found." };
   const card = row.data;
   if (!card.recipient_email) return { ok: false, error: "No recipient email on this ID." };
-  if (String(card.status || "").toLowerCase() === "used") {
-    return { ok: false, error: "This ID has already been used." };
-  }
+  // Allow resend even if already used (admin may want to re-send the code)
 
   const kind = card.type === "faculty" ? "Faculty" : "Student";
   const subject = "Your " + kind + " ID – Mehedi's University Management System";
@@ -592,12 +605,33 @@ function sendIdEmail(id) {
     "— Mehedi's University Management System";
 
   try {
-    MailApp.sendEmail(card.recipient_email, subject, body);
+    // Check remaining quota (helps diagnose "not sent")
+    var remaining = null;
+    try { remaining = MailApp.getRemainingDailyQuota(); } catch (_) {}
+    if (remaining !== null && remaining <= 0) {
+      return { ok: false, error: "Gmail daily sending quota is finished. Try again tomorrow, or send from a Google Workspace account." };
+    }
+
+    MailApp.sendEmail({
+      to: String(card.recipient_email).trim(),
+      subject: subject,
+      body: body,
+      name: "Mehedi's University Management System"
+    });
     const sent = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd");
     updateRow("id_cards", id, { email_sent_date: sent });
-    return { ok: true, message: "Email sent to " + card.recipient_email };
+    return {
+      ok: true,
+      message: "Email sent to " + card.recipient_email +
+        (remaining !== null ? " (quota left today: " + (remaining - 1) + ")" : "")
+    };
   } catch (err) {
-    return { ok: false, error: "Could not send email: " + (err.message || String(err)) };
+    var msg = err && err.message ? err.message : String(err);
+    // Common authorization / permission errors
+    if (/Authorization|permission|access|not authorized|required scopes/i.test(msg)) {
+      msg = "Script is not authorized to send email. In Apps Script: Run sendIdEmail once from the editor, approve Gmail permission, then redeploy as Execute as: Me / Who has access: Anyone.";
+    }
+    return { ok: false, error: "Could not send email: " + msg };
   }
 }
 
