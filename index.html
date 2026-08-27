@@ -320,7 +320,7 @@
    CONFIG – paste your Google Apps Script Web App URL here
    ============================================================ */
 const UMS_CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycby1mtwimBqLVAGwV2_iolEjkfPur-jX3uBStf9CMEq7ghviifWvwZae7Aynjs6uza1q1g/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbz7YZsdzDnXAnHoV7XJsIxPCYkvM_748MrHGFla5VtzvF3MasAcn8ZlPup3vPKaHf3z7A/exec",
   SHOW_LOADING: false
 };
 
@@ -453,8 +453,10 @@ const DB = (() => {
   }
 
   async function seedIfNeeded() {
-    try { await api("seedadmin"); } catch (e) { console.warn("seedadmin:", e.message); }
-  }
+  // Disabled because the deployed Apps Script does not support
+  // the "seedadmin" action.
+  return null;
+}
 
   async function loginRemote(usernameOrEmail, password, loginType) {
     return api("login", { usernameOrEmail, password, loginType });
@@ -643,45 +645,6 @@ function profileAvatar(session) {
   return session.avatar_data || generatedAvatar(session.full_name, session.email || session.username);
 }
 
-  function handleProfileSave() {
-    const fileInput = document.querySelector('input[type="file"]');
-    const userEmail = "mehedihasan92006@gmail.com"; // Pass logged-in user email dynamically
-
-    if (fileInput.files.length > 0) {
-      const file = fileInput.files[0];
-      const reader = new FileReader();
-
-      reader.onload = function(e) {
-        const base64Data = e.target.result;
-
-        // Call backend Apps Script function
-        google.script.run
-          .withSuccessHandler(onAvatarSaveSuccess)
-          .withFailureHandler(onAvatarSaveFailure)
-          .saveAvatarImage(base64Data, file.name, userEmail);
-      };
-
-      reader.readAsDataURL(file);
-    }
-  }
-
-  function onAvatarSaveSuccess(response) {
-    if (response.success) {
-      // Dynamically replace the default green "MH" initial badge with an <img> element
-      const avatarContainer = document.querySelector('.profile-avatar-container') || document.querySelector('span.rounded-full');
-      
-      // Update the main profile image and header icon link
-      avatarContainer.innerHTML = `<img src="${response.avatarUrl}" class="w-12 h-12 rounded-full object-cover" alt="Avatar"/>`;
-      alert("Profile picture updated successfully!");
-    } else {
-      alert("Upload failed: " + response.error);
-    }
-  }
-
-  function onAvatarSaveFailure(error) {
-    alert("Error uploading image: " + error.message);
-  }
-
 function timeGreeting() {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
@@ -726,43 +689,115 @@ function renderNavbar(activeKey, session) {
 async function showAppShell(activeKey) {
   const session = AUTH.requireLogin();
   const app = document.getElementById("app");
-  app.innerHTML = renderNavbar(activeKey, session) +
-    `<div class="container"><div id="flashArea"></div><div id="pageContent"></div></div>`;
-  if (!isStudentSession(session) && (session.login_type === "faculty" || session.role === "faculty")) {
+
+  if (!app) {
+    throw new Error("Missing #app element in HTML.");
+  }
+
+  // Clear the old page completely
+  app.replaceChildren();
+
+  // Add navigation safely
+  const navHolder = document.createElement("div");
+  navHolder.innerHTML = renderNavbar(activeKey, session).trim();
+
+  while (navHolder.firstChild) {
+    app.appendChild(navHolder.firstChild);
+  }
+
+  // Create the page container explicitly
+  const main = document.createElement("main");
+  main.className = "container";
+  main.innerHTML = `
+    <div id="flashArea"></div>
+    <div id="pageContent"></div>
+  `;
+
+  app.appendChild(main);
+
+  const flashArea = main.querySelector("#flashArea");
+  const pageContent = main.querySelector("#pageContent");
+
+  if (!pageContent) {
+    throw new Error("Could not create #pageContent.");
+  }
+
+  // Faculty access message
+  if (
+    !isStudentSession(session) &&
+    session.logintype === "faculty" &&
+    session.role === "faculty"
+  ) {
     const info = document.createElement("div");
     info.className = "flash flash-info session-access-info";
-    info.innerHTML = 'You are logged in as <strong>Faculty</strong>. You can add, edit and delete data.';
-    document.getElementById("flashArea").appendChild(info);
+    info.innerHTML =
+      "You are logged in as <strong>Faculty</strong>. You can add, edit and delete data.";
+
+    flashArea.appendChild(info);
+
+    setTimeout(() => {
+      info.remove();
+    }, 3000);
   }
-  const accessInfo = document.querySelector(".session-access-info");
-  if (accessInfo) setTimeout(() => accessInfo.remove(), 3000);
-  Flash.render(document.getElementById("flashArea"));
-  if (window.umsClockInterval) clearInterval(window.umsClockInterval);
+
+  Flash.render(flashArea);
+
+  // Clock
+  if (window.umsClockInterval) {
+    clearInterval(window.umsClockInterval);
+  }
+
   window.umsClockInterval = setInterval(() => {
     const clock = document.getElementById("currentTime");
-    if (clock) clock.textContent = "Time: " + new Date().toLocaleTimeString();
+
+    if (clock) {
+      clock.textContent = new Date().toLocaleTimeString();
+    }
   }, 1000);
-  document.getElementById("logoutLink").addEventListener("click", e => {
-    e.preventDefault();
-    const exitTime = DB.dateTime();
-    AUTH.logout();
-    if (window.umsClockInterval) clearInterval(window.umsClockInterval);
-    Flash.push("Logged out successfully. Exit time: " + exitTime, "success");
-    location.hash = "#login";
-    route();
-  });
-  document.querySelector(".profile-picture").addEventListener("click", e => {
-    e.preventDefault();
-    location.hash = "#profile";
-    route();
-  });
-  document.getElementById("menuToggle").addEventListener("click", () => {
-    const menu = document.querySelector(".nav-links");
-    const toggle = document.getElementById("menuToggle");
-    const isOpen = menu.classList.toggle("menu-open");
-    toggle.setAttribute("aria-expanded", String(isOpen));
-    toggle.textContent = isOpen ? "✕ Close" : "☰ Menu";
-  });
+
+  // Logout
+  const logoutLink = document.getElementById("logoutLink");
+
+  if (logoutLink) {
+    logoutLink.addEventListener("click", (event) => {
+      event.preventDefault();
+
+      const exitTime = DB.dateTime();
+      AUTH.logout();
+
+      if (window.umsClockInterval) {
+        clearInterval(window.umsClockInterval);
+      }
+
+      Flash.push(`Logged out successfully. Exit time: ${exitTime}`, "success");
+
+      location.hash = "login";
+    });
+  }
+
+  // Profile link
+  const profileLink = document.querySelector(".profile-picture");
+
+  if (profileLink) {
+    profileLink.addEventListener("click", (event) => {
+      event.preventDefault();
+      location.hash = "profile";
+    });
+  }
+
+  // Mobile menu
+  const menuToggle = document.getElementById("menuToggle");
+  const menu = document.querySelector(".nav-links");
+
+  if (menuToggle && menu) {
+    menuToggle.addEventListener("click", () => {
+      const isOpen = menu.classList.toggle("menu-open");
+
+      menuToggle.setAttribute("aria-expanded", String(isOpen));
+      menuToggle.textContent = isOpen ? "Close Menu" : "Menu";
+    });
+  }
+
   return session;
 }
 
@@ -792,7 +827,7 @@ async function pageLogin() {
       <div class="auth-footer">No account? <a href="#signup">Sign Up</a></div>
     </div></div>`;
   Flash.render(document.getElementById("flashArea"));
-  DB.seedIfNeeded().catch(() => {});
+  
   const LOGIN_TYPE_META = {
     student: { label: "Student ID or Email", placeholder: "STU001" },
     faculty: { label: "Faculty ID or Email", placeholder: "FAC001" },
@@ -894,11 +929,19 @@ async function pageSignup() {
 async function pageDashboard() {
   const session = await showAppShell("dashboard");
 
+  const pageContent = document.querySelector("#app #pageContent");
+
+  if (!pageContent) {
+    throw new Error("Dashboard container #pageContent is missing.");
+  }
+
+  // Keep the rest of your existing dashboard code below this line
+
   // ========== STUDENT PERSONAL DASHBOARD ==========
   if (isStudentSession(session)) {
     const student = await getCurrentStudent(session);
     if (!student) {
-      document.getElementById("pageContent").innerHTML = `
+      pageContent.innerHTML = `
         <h1 class="page-title">My Dashboard</h1>
         <div class="flash flash-warning">Your student profile is not fully set up yet. Please contact the administrator.</div>`;
       return;
@@ -2103,6 +2146,7 @@ async function pageLibrary() {
   });
 }
 
+
 async function pageHostel() {
   await showAppShell("hostel");
   const [rooms, allocations, students] = await Promise.all([
@@ -2412,6 +2456,98 @@ window.addEventListener("DOMContentLoaded", () => {
       chatMsgs.scrollTop = chatMsgs.scrollHeight;
     });
   }
+});
+</script>
+</body>
+</html>
+
+
+/* ============================================================
+   ROUTER EXECUTION
+   ============================================================ */
+const ROUTES = {
+  login: pageLogin,
+  signup: pageSignup,
+  dashboard: pageDashboard,
+  myfees: pageMyFees,
+  myidcard: pageMyIdCard,
+  admitcard: pageAdmitCard,
+  accounts: pageAccounts,
+  idcards: pageIdCards,
+  students: pageStudents,
+  faculty: pageFaculty,
+  courses: pageCourses,
+  enrollment: pageEnrollment,
+  fees: pageFees,
+  exams: pageExams,
+  library: pageLibrary,
+  hostel: pageHostel,
+  profile: pageProfile
+};
+
+function route() {
+  const r = getRoute();
+  const handler = ROUTES[r] || ROUTES.dashboard;
+  handler().catch(err => {
+    if (err.message !== "redirect") {
+      console.error(err);
+      Flash.push("System error: " + err.message, "danger");
+    }
+  });
+}
+
+window.addEventListener("hashchange", route);
+window.addEventListener("DOMContentLoaded", () => {
+  if (!UMS_CONFIG.SCRIPT_URL || UMS_CONFIG.SCRIPT_URL.indexOf("PASTE_YOUR") !== -1) {
+    document.getElementById("configBanner").classList.remove("hidden");
+  }
+  
+  // Initialize AI Widget Toggle Handlers
+  const chatBox = document.getElementById("ai-chat-box");
+  const chatBtn = document.getElementById("ai-chat-button");
+  const chatClose = document.getElementById("ai-chat-close");
+
+  chatBtn.addEventListener("click", () => {
+    chatBox.style.display = chatBox.style.display === "flex" ? "none" : "flex";
+  });
+  chatClose.addEventListener("click", () => {
+    chatBox.style.display = "none";
+  });
+
+  // Handle AI Chat submissions via Google Apps Script endpoint
+  document.getElementById("ai-chat-form").addEventListener("submit", async e => {
+    e.preventDefault();
+    const input = document.getElementById("ai-chat-input");
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    const msgsBox = document.getElementById("ai-chat-messages");
+    
+    // Add user message to UI
+    const uDiv = document.createElement("div");
+    uDiv.className = "ai-msg ai-msg-user";
+    uDiv.textContent = msg;
+    msgsBox.appendChild(uDiv);
+    input.value = "";
+    msgsBox.scrollTop = msgsBox.scrollHeight;
+
+    // Loading indicator
+    const aDiv = document.createElement("div");
+    aDiv.className = "ai-msg ai-msg-assistant";
+    aDiv.textContent = "Thinking...";
+    msgsBox.appendChild(aDiv);
+    msgsBox.scrollTop = msgsBox.scrollHeight;
+
+    try {
+      const res = await DB.api("aichat", { prompt: msg });
+      aDiv.textContent = res.reply || "Sorry, I couldn't process your request.";
+    } catch (err) {
+      aDiv.textContent = "Error communicating with AI assistant.";
+    }
+    msgsBox.scrollTop = msgsBox.scrollHeight;
+  });
+
+  route();
 });
 </script>
 </body>
