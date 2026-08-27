@@ -643,6 +643,45 @@ function profileAvatar(session) {
   return session.avatar_data || generatedAvatar(session.full_name, session.email || session.username);
 }
 
+  function handleProfileSave() {
+    const fileInput = document.querySelector('input[type="file"]');
+    const userEmail = "mehedihasan92006@gmail.com"; // Pass logged-in user email dynamically
+
+    if (fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        const base64Data = e.target.result;
+
+        // Call backend Apps Script function
+        google.script.run
+          .withSuccessHandler(onAvatarSaveSuccess)
+          .withFailureHandler(onAvatarSaveFailure)
+          .saveAvatarImage(base64Data, file.name, userEmail);
+      };
+
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function onAvatarSaveSuccess(response) {
+    if (response.success) {
+      // Dynamically replace the default green "MH" initial badge with an <img> element
+      const avatarContainer = document.querySelector('.profile-avatar-container') || document.querySelector('span.rounded-full');
+      
+      // Update the main profile image and header icon link
+      avatarContainer.innerHTML = `<img src="${response.avatarUrl}" class="w-12 h-12 rounded-full object-cover" alt="Avatar"/>`;
+      alert("Profile picture updated successfully!");
+    } else {
+      alert("Upload failed: " + response.error);
+    }
+  }
+
+  function onAvatarSaveFailure(error) {
+    alert("Error uploading image: " + error.message);
+  }
+
 function timeGreeting() {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
@@ -2374,46 +2413,6 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-</script>
-  <script>
-  function handleProfileSave() {
-    const fileInput = document.querySelector('input[type="file"]');
-    const userEmail = "mehedihasan92006@gmail.com"; // Pass logged-in user email dynamically
-
-    if (fileInput.files.length > 0) {
-      const file = fileInput.files[0];
-      const reader = new FileReader();
-
-      reader.onload = function(e) {
-        const base64Data = e.target.result;
-
-        // Call backend Apps Script function
-        google.script.run
-          .withSuccessHandler(onAvatarSaveSuccess)
-          .withFailureHandler(onAvatarSaveFailure)
-          .saveAvatarImage(base64Data, file.name, userEmail);
-      };
-
-      reader.readAsDataURL(file);
-    }
-  }
-
-  function onAvatarSaveSuccess(response) {
-    if (response.success) {
-      // Dynamically replace the default green "MH" initial badge with an <img> element
-      const avatarContainer = document.querySelector('.profile-avatar-container') || document.querySelector('span.rounded-full');
-      
-      // Update the main profile image and header icon link
-      avatarContainer.innerHTML = `<img src="${response.avatarUrl}" class="w-12 h-12 rounded-full object-cover" alt="Avatar"/>`;
-      alert("Profile picture updated successfully!");
-    } else {
-      alert("Upload failed: " + response.error);
-    }
-  }
-
-  function onAvatarSaveFailure(error) {
-    alert("Error uploading image: " + error.message);
-  }
 </script>
 </body>
 </html>
