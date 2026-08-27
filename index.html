@@ -324,7 +324,7 @@
    CONFIG – paste your Google Apps Script Web App URL here
    ============================================================ */
 const UMS_CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbw28hMp0TcRSnEEDCSlZ0Sj7XZzQvct6MP0tAbNoPJD94F8UppcR6YrR6k5skCLs6f3ug/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwwjZyoO1ElBhRLuzPzRfmIbKdhBa1u2KCLUsTap1kT8-JM9eC6mkD78cQ-_yC1aQTR8w/exec",
   SHOW_LOADING: false
 };
 
@@ -879,8 +879,16 @@ async function showAppShell(activeKey) {
 /* ============================================================
    PAGES
    ============================================================ */
+/** Where to send the user after login (or if already logged in). */
+function homeHashForSession(session) {
+  if (!session) return "#login";
+  if (session.login_type === "faculty" || session.role === "faculty") return "#faculty";
+  if (session.login_type === "student" || session.role === "student") return "#dashboard";
+  return "#dashboard";
+}
+
 async function pageLogin() {
-  if (AUTH.isLoggedIn()) { location.hash = "#dashboard"; route(); return; }
+  if (AUTH.isLoggedIn()) { location.hash = homeHashForSession(AUTH.getSession()); route(); return; }
   document.getElementById("app").innerHTML = `
     <div class="auth-wrap"><div class="auth-box">
       <h1>🎓 Mehedi's University Management System</h1>
@@ -930,7 +938,8 @@ async function pageLogin() {
       );
       if (result.ok) {
         Flash.push(timeGreeting() + ", welcome to Mehedi's University Management System!", "success");
-        location.hash = "#dashboard";
+        // Faculty Login → Faculty page; Student Login → student dashboard; Admin → dashboard
+        location.hash = homeHashForSession(AUTH.getSession());
         route();
       } else {
         Flash.push(result.message || "Invalid username or password.", "danger");
@@ -946,7 +955,7 @@ async function pageLogin() {
 }
 
 async function pageSignup() {
-  if (AUTH.isLoggedIn()) { location.hash = "#dashboard"; route(); return; }
+  if (AUTH.isLoggedIn()) { location.hash = homeHashForSession(AUTH.getSession()); route(); return; }
   document.getElementById("app").innerHTML = `
     <div class="auth-wrap"><div class="auth-box">
       <h1>🎓 Create Account</h1>
