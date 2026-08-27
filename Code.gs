@@ -12,11 +12,12 @@
 
 const TABLES = [
   "users", "students", "faculty", "courses", "enrollments",
-  "fees", "exams", "results", "books", "issues", "rooms", "allocations"
+  "fees", "exams", "results", "books", "issues", "rooms", "allocations",
+  "id_cards"
 ];
 
 const HEADERS = {
-  users:        ["id", "username", "email", "password", "full_name", "role", "created_at"],
+  users:        ["id", "username", "email", "password", "full_name", "role", "student_id", "faculty_id", "created_at"],
   students:     ["id", "student_id", "first_name", "last_name", "email", "phone", "department", "year", "gender", "address", "created_at"],
   faculty:      ["id", "faculty_id", "first_name", "last_name", "email", "phone", "department", "designation", "created_at"],
   courses:      ["id", "course_code", "title", "credits", "department", "faculty_id", "semester"],
@@ -27,7 +28,8 @@ const HEADERS = {
   books:        ["id", "isbn", "title", "author", "category", "total_copies", "available_copies"],
   issues:       ["id", "book_id", "student_id", "issue_date", "due_date", "return_date", "status"],
   rooms:        ["id", "room_number", "block", "capacity", "occupied"],
-  allocations:  ["id", "room_id", "student_id", "allocate_date", "status"]
+  allocations:  ["id", "room_id", "student_id", "allocate_date", "status"],
+  id_cards:     ["id", "code", "type", "label", "status", "issued_date", "used_by", "used_date"]
 };
 
 function doGet(e) {
@@ -73,10 +75,13 @@ function handleRequest(e) {
         result = deleteWhere(body.table, body.field, body.value);
         break;
       case "login":
-        result = loginUser(body.usernameOrEmail, body.password);
+        result = loginUser(body.usernameOrEmail, body.password, body.loginType);
         break;
       case "signup":
         result = signupUser(body.data || {});
+        break;
+      case "issueid":
+        result = issueId(body.type, body.label);
         break;
       case "seedadmin":
         result = ensureDefaultAdmin();
@@ -240,53 +245,134 @@ function hashPassword(password) {
   return "h_" + hash + "_" + s.length;
 }
 
-function loginUser(usernameOrEmail, password) {
+function loginUser(usernameOrEmail, password, loginType) {
   const users = sheetToObjects(getSheet("users"));
   const user = users.find(u =>
     u.username === usernameOrEmail || u.email === usernameOrEmail
   );
-  if (user && user.password === hashPassword(password)) {
+
+  if (!user || user.password !== hashPassword(password)) {
+    return { ok: false, error: "Invalid username or password" };
+  }
+
+  // Enforce that the selected login tab matches the account's actual role.
+  // A Student ID/password can only sign in through Student Login, a Faculty
+  // ID/password only through Faculty Login, etc.
+  const type = String(loginType || "administrative").toLowerCase();
+  const requiredRoleByType = { student: "student", faculty: "faculty", administrative: "admin" };
+  const requiredRole = requiredRoleByType[type];
+
+  if (requiredRole && user.role !== requiredRole) {
+    const label = { student: "Student", faculty: "Faculty", admin: "Administrative" }[requiredRole] || requiredRole;
     return {
-      ok: true,
-      user: {
-        id: user.id,
-        username: user.username,
-        full_name: user.full_name || user.username,
-        role: user.role,
-        email: user.email
-      }
+      ok: false,
+      error: "This account is not registered for " + label + " Login. Please choose the correct login tab."
     };
   }
-  return { ok: false, error: "Invalid username or password" };
+
+  return {
+    ok: true,
+    user: {
+      id: user.id,
+      username: user.username,
+      full_name: user.full_name || user.username,
+      role: user.role,
+      email: user.email,
+      student_id: user.student_id || null,
+      faculty_id: user.faculty_id || null
+    }
+  };
+}
+
+function issueId(type, label) {
+  type = String(type || "").trim().toLowerCase();
+  if (type !== "student" && type !== "faculty") {
+    return { ok: false, error: "Invalid ID type. Choose Student or Faculty." };
+  }
+
+  const prefix = type === "student" ? "STU" : "FAC";
+  const rows = sheetToObjects(getSheet("id_cards"));
+  let maxNum = 0;
+  rows.forEach(function(r) {
+    if (r.type !== type) return;
+    const m = String(r.code || "").match(new RegExp("^" + prefix + "(\\d+)$"));
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (n > maxNum) maxNum = n;
+    }
+  });
+  const code = prefix + String(maxNum + 1).padStart(3, "0");
+
+  const result = insertRow("id_cards", {
+    code: code,
+    type: type,
+    label: (label || "").trim() || null,
+    status: "available",
+    issued_date: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd")
+  });
+  return { ok: true, code: code, id: result.id };
 }
 
 function signupUser(data) {
-  const username = (data.username || "").trim();
+  const role = String(data.role || "").trim().toLowerCase(); // "student" or "faculty"
+  if (role !== "student" && role !== "faculty") {
+    return { ok: false, error: "Invalid signup type. Choose Student or Faculty." };
+  }
+
+  const identifierField = role === "student" ? "student_id" : "faculty_id";
+  const identifierLabel = role === "student" ? "Student ID" : "Faculty ID";
+  const identifier = String(data[identifierField] || data.identifier || "").trim();
   const email = (data.email || "").trim();
   const password = data.password || "";
   const full_name = (data.full_name || "").trim();
 
-  if (!username || !email || !password) {
-    return { ok: false, error: "All required fields must be filled." };
+  if (!identifier || !email || !password) {
+    return { ok: false, error: identifierLabel + ", email and password are required." };
   }
   if (password.length < 6) {
     return { ok: false, error: "Password must be at least 6 characters." };
   }
 
-  const users = sheetToObjects(getSheet("users"));
-  if (users.some(u => u.username === username || u.email === email)) {
-    return { ok: false, error: "Username or email already exists." };
+  // The ID must already exist as an "available" card issued by an admin
+  // in the ID Cards tab — this stops anyone from typing in a made-up ID.
+  const idCards = sheetToObjects(getSheet("id_cards"));
+  const card = idCards.find(function(c) { return c.type === role && String(c.code) === identifier; });
+  if (!card) {
+    return { ok: false, error: "This " + identifierLabel + " has not been issued. Please contact the administrator." };
+  }
+  if (card.status === "used") {
+    return { ok: false, error: "This " + identifierLabel + " has already been used to create an account." };
   }
 
-  const result = insertRow("users", {
-    username: username,
+  const users = sheetToObjects(getSheet("users"));
+  const duplicate = users.some(u => u.username === identifier || u.email === email);
+  if (duplicate) {
+    return { ok: false, error: "An account with this " + identifierLabel + " or email already exists." };
+  }
+
+  const payload = {
+    username: identifier,
     email: email,
     password: hashPassword(password),
-    full_name: full_name || username,
-    role: "user",
+    full_name: full_name || card.label || identifier,
+    role: role,
     created_at: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd")
+  };
+  payload[identifierField] = identifier;
+
+  const result = insertRow("users", payload);
+
+  updateRow("id_cards", card.id, {
+    status: "used",
+    used_by: result.id,
+    used_date: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd")
   });
-  return { ok: true, message: "Account created successfully! Please login.", id: result.id };
+
+  return {
+    ok: true,
+    message: "Account created successfully! Please login using " + identifierLabel + " Login.",
+    id: result.id
+  };
 }
 
 function ensureDefaultAdmin() {
