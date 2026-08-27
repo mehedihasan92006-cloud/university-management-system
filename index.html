@@ -303,7 +303,7 @@
    CONFIG – paste your Google Apps Script Web App URL here
    ============================================================ */
 const UMS_CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzdjk5MRFnoxk_q6XyDHTOeQVlDh9__3R7EeH6fjRVcswC9jlBc9SQuBWMPpPC7aeHMeg/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwDz0j6TyBxJ3obNovQdE2u4H2S0ftMqXS0cc7IpaRDqBKanElCNjyjyjDtLcc4DMKPaw/exec",
   SHOW_LOADING: false
 };
 
@@ -774,18 +774,19 @@ async function pageSignup() {
         <div class="form-group"><label>Confirm Password *</label><input type="password" id="confirm_password" required></div>
         <button type="submit" class="btn btn-primary btn-full" id="signupBtn">Sign Up</button>
       </form>
-      <p class="demo-hint" id="signupHint">Use the same email the administrator issued your Student ID to — no need to enter the ID yourself.</p>
+      <p class="demo-hint" id="signupHint">Enter any email. A Student/Faculty ID will be assigned automatically. (Admins can still pre-issue IDs from the ID Cards page if desired.)</p>
       <div class="auth-footer">Already have an account? <a href="#login">Sign In</a></div>
     </div></div>`;
   Flash.render(document.getElementById("flashArea"));
   const SIGNUP_TYPE_META = {
-    student: {
-      hint: "Use the same email the administrator issued your Student ID to — no need to enter the ID yourself."
-    },
-    faculty: {
-      hint: "Use the same email the administrator issued your Faculty ID to — no need to enter the ID yourself."
-    }
-  };
+  student: {
+    hint: "Enter any email. A Student ID will be assigned automatically. (Admins can pre-issue IDs from the ID Cards page.)"
+  },
+  faculty: {
+    hint: "Enter any email. A Faculty ID will be assigned automatically. (Admins can pre-issue IDs from the ID Cards page.)"
+  }
+};
+
   let selectedSignupType = "student";
   document.querySelectorAll("[data-signup-type]").forEach(typeButton => {
     typeButton.addEventListener("click", () => {
