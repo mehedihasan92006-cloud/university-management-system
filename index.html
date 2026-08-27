@@ -576,6 +576,7 @@ function calcGrade(marks, max) {
    ============================================================ */
 const NAV = [
   { key: "dashboard", label: "Dashboard" },
+  { key: "accounts", label: "Accounts" },
   { key: "idcards", label: "ID Cards" },
   { key: "students", label: "Students" },
   { key: "faculty", label: "Faculty" },
@@ -845,6 +846,62 @@ async function pageDashboard() {
     </div>
     <div class="card"><div class="card-header">Recently Added Students</div>
     <div class="card-body table-wrap">${recentRows}</div></div>`;
+}
+
+async function pageAccounts() {
+  await showAppShell("accounts");
+  const users = (await DB.getTable("users")).slice().sort((a, b) => b.id - a.id);
+  const studentCount = users.filter(u => u.role === "student").length;
+  const facultyCount = users.filter(u => u.role === "faculty").length;
+  const adminCount = users.filter(u => u.role === "admin").length;
+
+  const roleBadge = role => {
+    const cls = role === "admin" ? "flash-info" : (role === "faculty" ? "flash-warning" : "flash-success");
+    return `<span class="flash ${cls}" style="display:inline-block;padding:0.15rem 0.55rem;margin:0;">${H.esc((role || "").toUpperCase())}</span>`;
+  };
+
+  const rows = users.length
+    ? `<table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Student ID</th><th>Faculty ID</th><th>Created</th><th>Actions</th></tr></thead><tbody>
+       ${users.map(u => `<tr>
+         <td>${u.id}</td>
+         <td>${H.esc(u.full_name || u.username)}</td>
+         <td>${H.esc(u.email)}</td>
+         <td>${roleBadge(u.role)}</td>
+         <td>${H.esc(u.student_id || "—")}</td>
+         <td>${H.esc(u.faculty_id || "—")}</td>
+         <td>${H.esc(u.created_at || "—")}</td>
+         <td>${u.role === "admin" ? "—" : `<a href="#" class="btn btn-danger" data-del="${u.id}">Remove</a>`}</td>
+       </tr>`).join("")}
+       </tbody></table>`
+    : `<p class="empty">No accounts have signed up yet.</p>`;
+
+  document.getElementById("pageContent").innerHTML = `
+    <h1 class="page-title">Accounts</h1>
+    <p style="color:#9ca3af;font-size:0.85rem;margin-bottom:1rem;">
+      Every account that can currently sign in to this system, with the role and ID it logs in as.
+    </p>
+    <div class="stats-grid">
+      <div class="stat-card"><div style="font-size:1.6rem;font-weight:700;">${studentCount}</div><div style="color:#9ca3af;font-size:0.85rem;">Student</div></div>
+      <div class="stat-card"><div style="font-size:1.6rem;font-weight:700;">${facultyCount}</div><div style="color:#9ca3af;font-size:0.85rem;">Faculty</div></div>
+      <div class="stat-card"><div style="font-size:1.6rem;font-weight:700;">${adminCount}</div><div style="color:#9ca3af;font-size:0.85rem;">Admin</div></div>
+    </div>
+    <div class="card"><div class="card-header">All Accounts (${users.length})</div>
+    <div class="card-body table-wrap">${rows}</div></div>`;
+
+  document.querySelectorAll("[data-del]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault();
+      try { AUTH.requireAdmin(); } catch (err) { return; }
+      const id = parseInt(el.getAttribute("data-del"), 10);
+      H.confirm("Remove this account? They will no longer be able to log in.", async () => {
+        try {
+          await DB.remove("users", id);
+          Flash.push("Account removed.", "info");
+        } catch (err) { Flash.push(err.message, "danger"); }
+        route();
+      });
+    });
+  });
 }
 
 async function pageIdCards() {
@@ -1706,6 +1763,7 @@ const PAGES = {
   signup: pageSignup,
   profile: pageProfile,
   dashboard: pageDashboard,
+  accounts: pageAccounts,
   idcards: pageIdCards,
   students: pageStudents,
   faculty: pageFaculty,
