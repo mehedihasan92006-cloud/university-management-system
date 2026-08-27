@@ -320,7 +320,7 @@
    CONFIG – paste your Google Apps Script Web App URL here
    ============================================================ */
 const UMS_CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyBhCYaJ3leCRV4FTEcbEMQ3t8KKZca2HHXGsYVlR6F5B1_BQQ90D4pBvrOVs-aCdAS3A/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbz7YZsdzDnXAnHoV7XJsIxPCYkvM_748MrHGFla5VtzvF3MasAcn8ZlPup3vPKaHf3z7A/exec",
   SHOW_LOADING: false
 };
 
@@ -1368,65 +1368,190 @@ async function pageStudents() {
 async function pageFaculty() {
   await showAppShell("faculty");
   const faculty = (await DB.getTable("faculty")).slice().sort((a, b) => b.id - a.id);
+  
   const rows = faculty.length
-    ? `<table><thead><tr><th>ID</th><th>Faculty ID</th><th>Name</th><th>Department</th><th>Designation</th><th>Email</th><th>Phone</th><th>Actions</th></tr></thead><tbody>
-       ${faculty.map(f => `<tr>
-         <td>${f.id}</td><td>${H.esc(f.faculty_id)}</td><td>${H.esc(H.fullName(f))}</td>
-         <td>${H.esc(f.department)}</td><td>${H.esc(f.designation)}</td><td>${H.esc(f.email)}</td><td>${H.esc(f.phone)}</td>
-         <td><a href="#" class="btn btn-danger" data-del="${f.id}">Delete</a></td></tr>`).join("")}
-       </tbody></table>`
-    : `<p class="empty">No faculty yet.</p>`;
+    ? `<table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Faculty ID</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Designation</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+       ${faculty.map(f => `
+          <tr>
+            <td>${f.id}</td>
+            <td>${H.esc(f.faculty_id)}</td>
+            <td>${H.esc(H.fullName(f))}</td>
+            <td>${H.esc(f.department)}</td>
+            <td>${H.esc(f.designation)}</td>
+            <td>${H.esc(f.email)}</td>
+            <td>${H.esc(f.phone)}</td>
+            <td style="white-space:nowrap;">
+              <a href="#" class="btn btn-primary" data-edit="${f.id}" style="margin-right:0.3rem;">Edit</a>
+              <a href="#" class="btn btn-danger" data-del="${f.id}">Delete</a>
+            </td>
+          </tr>`).join("")}
+       </tbody>
+       </table>`
+    : `<p class="empty">No faculty members found.</p>`;
 
   document.getElementById("pageContent").innerHTML = `
-    <h1 class="page-title">Faculty</h1>
-    <div class="card"><div class="card-header">Add Faculty</div><div class="card-body">
-      <form id="addForm"><div class="form-grid">
-        <div class="form-group"><label>Faculty ID *</label><input name="faculty_id" required placeholder="FAC001"></div>
-        <div class="form-group"><label>First Name *</label><input name="first_name" required></div>
-        <div class="form-group"><label>Last Name *</label><input name="last_name" required></div>
-        <div class="form-group"><label>Email</label><input name="email" type="email"></div>
-        <div class="form-group"><label>Phone</label><input name="phone"></div>
-        <div class="form-group"><label>Department</label><input name="department"></div>
-        <div class="form-group"><label>Designation</label><input name="designation" placeholder="Professor"></div>
-      </div><button type="submit" class="btn btn-primary">Add Faculty</button></form>
-    </div></div>
-    <div class="card"><div class="card-header">All Faculty (${faculty.length})</div>
-    <div class="card-body table-wrap">${rows}</div></div>`;
+    <h1 class="page-title">Faculty Management</h1>
+    
+    <!-- Add / Edit Form -->
+    <div class="card">
+      <div class="card-header" id="formHeader">Add Faculty</div>
+      <div class="card-body">
+        <form id="facultyForm">
+          <input type="hidden" id="edit_id" name="edit_id" value="">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Faculty ID *</label>
+              <input name="faculty_id" id="field_faculty_id" required placeholder="FAC001">
+            </div>
+            <div class="form-group">
+              <label>First Name *</label>
+              <input name="first_name" id="field_first_name" required>
+            </div>
+            <div class="form-group">
+              <label>Last Name *</label>
+              <input name="last_name" id="field_last_name" required>
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input name="email" id="field_email" type="email">
+            </div>
+            <div class="form-group">
+              <label>Phone</label>
+              <input name="phone" id="field_phone">
+            </div>
+            <div class="form-group">
+              <label>Department</label>
+              <input name="department" id="field_department">
+            </div>
+            <div class="form-group">
+              <label>Designation</label>
+              <input name="designation" id="field_designation" placeholder="Professor">
+            </div>
+          </div>
+          <div style="display:flex;gap:0.5rem;">
+            <button type="submit" class="btn btn-primary" id="saveBtn">Add Faculty</button>
+            <button type="button" class="btn btn-danger hidden" id="cancelBtn">Cancel Edit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Data Table -->
+    <div class="card">
+      <div class="card-header">All Faculty (${faculty.length})</div>
+      <div class="card-body table-wrap">${rows}</div>
+    </div>`;
 
-  document.getElementById("addForm").addEventListener("submit", async e => {
+  // Submit Handler (Create / Update)
+  document.getElementById("facultyForm").addEventListener("submit", async e => {
     e.preventDefault();
-    try { AUTH.requireAdmin(); } catch (err) { return; }
+    try { AUTH.requireAdmin(); } catch (err) { return; } // Allows Admin and Faculty access
+    
     const f = e.target;
+    const editId = f.edit_id.value ? parseInt(f.edit_id.value, 10) : null;
     const faculty_id = f.faculty_id.value.trim();
-    if (await DB.findOne("faculty", r => r.faculty_id === faculty_id)) {
-      Flash.push("Faculty ID already exists.", "danger"); route(); return;
-    }
+
+    const payload = {
+      faculty_id,
+      first_name: f.first_name.value.trim(),
+      last_name: f.last_name.value.trim(),
+      email: f.email.value.trim() || null,
+      phone: f.phone.value.trim() || null,
+      department: f.department.value.trim() || null,
+      designation: f.designation.value.trim() || null
+    };
+
     try {
-      await DB.insert("faculty", {
-        faculty_id, first_name: f.first_name.value.trim(), last_name: f.last_name.value.trim(),
-        email: f.email.value.trim() || null, phone: f.phone.value.trim() || null,
-        department: f.department.value.trim() || null, designation: f.designation.value.trim() || null,
-        created_at: DB.today()
-      });
-      Flash.push("Faculty added.", "success");
-    } catch (err) { Flash.push(err.message, "danger"); }
+      if (editId) {
+        // Update existing entry
+        await DB.update("faculty", editId, payload);
+        Flash.push("Faculty member updated successfully.", "success");
+      } else {
+        // Create new entry
+        if (await DB.findOne("faculty", r => r.faculty_id === faculty_id)) {
+          Flash.push("Faculty ID already exists.", "danger");
+          route();
+          return;
+        }
+        payload.created_at = DB.today();
+        await DB.insert("faculty", payload);
+        Flash.push("Faculty member added successfully.", "success");
+      }
+    } catch (err) {
+      Flash.push(err.message, "danger");
+    }
     route();
   });
 
+  // Edit Button Event Handling
+  document.querySelectorAll("[data-edit]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault();
+      try { AUTH.requireAdmin(); } catch (err) { return; }
+      
+      const id = parseInt(el.getAttribute("data-edit"), 10);
+      const item = faculty.find(f => Number(f.id) === id);
+      if (!item) return;
+
+      // Populate Form Fields
+      document.getElementById("edit_id").value = item.id;
+      document.getElementById("field_faculty_id").value = item.faculty_id || "";
+      document.getElementById("field_first_name").value = item.first_name || "";
+      document.getElementById("field_last_name").value = item.last_name || "";
+      document.getElementById("field_email").value = item.email || "";
+      document.getElementById("field_phone").value = item.phone || "";
+      document.getElementById("field_department").value = item.department || "";
+      document.getElementById("field_designation").value = item.designation || "";
+
+      // Update Form UI state
+      document.getElementById("formHeader").textContent = "Edit Faculty Member";
+      document.getElementById("saveBtn").textContent = "Update Faculty";
+      document.getElementById("cancelBtn").classList.remove("hidden");
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  // Cancel Edit Mode Handler
+  document.getElementById("cancelBtn").addEventListener("click", () => {
+    route();
+  });
+
+  // Delete Handler
   document.querySelectorAll("[data-del]").forEach(el => {
     el.addEventListener("click", e => {
       e.preventDefault();
       try { AUTH.requireAdmin(); } catch (err) { return; }
+      
       const id = parseInt(el.getAttribute("data-del"), 10);
       H.confirm("Delete this faculty member?", async () => {
         try {
           await DB.remove("faculty", id);
+          
+          // Unlink deleted faculty from assigned courses
           const courses = await DB.getTable("courses");
           for (const c of courses) {
-            if (Number(c.faculty_id) === id) await DB.update("courses", c.id, { faculty_id: null });
+            if (Number(c.faculty_id) === id) {
+              await DB.update("courses", c.id, { faculty_id: null });
+            }
           }
-          Flash.push("Faculty deleted.", "info");
-        } catch (err) { Flash.push(err.message, "danger"); }
+          Flash.push("Faculty member deleted.", "info");
+        } catch (err) {
+          Flash.push(err.message, "danger");
+        }
         route();
       });
     });
