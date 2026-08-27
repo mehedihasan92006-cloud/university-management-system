@@ -12,7 +12,7 @@ const TABLES = [
 const HEADERS = {
   users:        ["id", "username", "email", "password", "full_name", "role", "student_id", "faculty_id", "created_at", "photo_url", "photo_file_id"],
   students:     ["id", "student_id", "first_name", "last_name", "email", "phone", "department", "year", "gender", "address", "created_at"],
-  faculty:      ["id", "faculty_id", "first_name", "last_name", "email", "phone", "department", "designation", "created_at"],
+  faculty:      ["id", "faculty_id", "first_name", "last_name", "email", "phone", "department", "designation", "created_at", "resume_url", "resume_file_id"],
   courses:      ["id", "course_code", "title", "credits", "department", "faculty_id", "semester"],
   enrollments:  ["id", "student_id", "course_id", "enroll_date", "status"],
   fees:         ["id", "student_id", "amount", "fee_type", "due_date", "paid", "paid_date", "created_at"],
@@ -84,6 +84,12 @@ function handleRequest(e) {
         break;
       case "removephoto":
         result = removeProfilePhoto(Number(body.id || body.userId));
+        break;
+      case "saveresume":
+        result = saveFacultyResume(Number(body.id || body.facultyId), body.resume || body.resume_data || "");
+        break;
+      case "removeresume":
+        result = removeFacultyResume(Number(body.id || body.facultyId));
         break;
       case "ping":
         result = { ok: true, message: "UMS API is running" };
@@ -694,4 +700,80 @@ function saveProfile(userId, data) {
     message: "Profile saved.",
     user: publicUser(Object.assign({}, fresh, { photo_url: photo_url || userPhoto(fresh) }))
   };
+}
+
+function getResumeFolder() {
+  const name = "UMS Faculty Resumes";
+  const it = DriveApp.getFoldersByName(name);
+  if (it.hasNext()) return it.next();
+  return DriveApp.createFolder(name);
+}
+
+function driveResumeUrl(fileId) {
+  return "https://drive.google.com/file/d/" + fileId + "/view";
+}
+
+function saveBlobResume(facultyRowId, dataUrl) {
+  const match = String(dataUrl).match(/^data:(application\/pdf|application\/msword|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document);base64,(.+)$/i);
+  if (!match) throw new Error("Invalid resume file. Please upload a PDF or Word document.");
+  const mime = match[1];
+  const bytes = Utilities.base64Decode(match[2]);
+  if (bytes.length > 5 * 1024 * 1024) throw new Error("Resume is too large. Use a file under 5 MB.");
+  let ext = "pdf";
+  if (mime.indexOf("msword") !== -1) ext = "doc";
+  else if (mime.indexOf("wordprocessingml") !== -1) ext = "docx";
+  const blob = Utilities.newBlob(bytes, mime, "resume_" + facultyRowId + "." + ext);
+
+  const folder = getResumeFolder();
+  // Trash previous versions
+  ["pdf", "doc", "docx"].forEach(function(e) {
+    const old = folder.getFilesByName("resume_" + facultyRowId + "." + e);
+    while (old.hasNext()) old.next().setTrashed(true);
+  });
+
+  const file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return { fileId: file.getId(), url: driveResumeUrl(file.getId()) };
+}
+
+/**
+ * Save resume for a faculty row (by faculty sheet id).
+ * Expects data URL of PDF/DOC/DOCX.
+ */
+function saveFacultyResume(facultyId, resumeData) {
+  if (!facultyId) return { ok: false, error: "Missing faculty id." };
+  if (!resumeData) return { ok: false, error: "No resume provided." };
+
+  const row = getRow("faculty", facultyId);
+  if (!row.data) return { ok: false, error: "Faculty member not found." };
+
+  let resume_url = "";
+  let resume_file_id = "";
+
+  try {
+    const saved = saveBlobResume(facultyId, resumeData);
+    resume_url = saved.url;
+    resume_file_id = saved.fileId;
+  } catch (err) {
+    return { ok: false, error: err.message || String(err) };
+  }
+
+  updateRow("faculty", facultyId, { resume_url: resume_url, resume_file_id: resume_file_id });
+  return { ok: true, resume_url: resume_url, message: "Resume uploaded successfully." };
+}
+
+function removeFacultyResume(facultyId) {
+  if (!facultyId) return { ok: false, error: "Missing faculty id." };
+  const row = getRow("faculty", facultyId);
+  if (!row.data) return { ok: false, error: "Faculty member not found." };
+
+  if (row.data.resume_file_id) {
+    try {
+      const file = DriveApp.getFileById(String(row.data.resume_file_id));
+      file.setTrashed(true);
+    } catch (_) {}
+  }
+
+  updateRow("faculty", facultyId, { resume_url: "", resume_file_id: "" });
+  return { ok: true, message: "Resume removed." };
 }

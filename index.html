@@ -324,7 +324,7 @@
    CONFIG – paste your Google Apps Script Web App URL here
    ============================================================ */
 const UMS_CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwwjZyoO1ElBhRLuzPzRfmIbKdhBa1u2KCLUsTap1kT8-JM9eC6mkD78cQ-_yC1aQTR8w/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzSun__S_H0hIhX2TxZ6H50OnrrYWyMfE9aBnT8Re8Rbovggj2PeeXlQCgS2H5cJTciMA/exec",
   SHOW_LOADING: false
 };
 
@@ -650,6 +650,10 @@ function isStudentSession(session) {
   return session && (session.role === "student" || session.login_type === "student");
 }
 
+function isFacultySession(session) {
+  return session && (session.role === "faculty" || session.login_type === "faculty") && session.role !== "admin";
+}
+
 async function getCurrentStudent(session) {
   if (!session) return null;
   const code = session.student_id || session.username;
@@ -657,6 +661,16 @@ async function getCurrentStudent(session) {
   return students.find(s =>
     s.student_id === code ||
     (s.email && session.email && s.email.toLowerCase() === session.email.toLowerCase())
+  ) || null;
+}
+
+async function getCurrentFaculty(session) {
+  if (!session) return null;
+  const code = session.faculty_id || session.username;
+  const facultyList = await DB.getTable("faculty");
+  return facultyList.find(f =>
+    f.faculty_id === code ||
+    (f.email && session.email && f.email.toLowerCase() === session.email.toLowerCase())
   ) || null;
 }
 
@@ -882,19 +896,32 @@ async function showAppShell(activeKey) {
 /** Where to send the user after login (or if already logged in). */
 function homeHashForSession(session) {
   if (!session) return "#login";
-  if (session.login_type === "faculty" || session.role === "faculty") return "#faculty";
   if (session.login_type === "student" || session.role === "student") return "#dashboard";
+  // Faculty and admin both land on dashboard (faculty sees personal view)
   return "#dashboard";
 }
 
 async function pageLogin() {
-  if (AUTH.isLoggedIn()) { location.hash = homeHashForSession(AUTH.getSession()); route(); return; }
+  // Always show the login page (do not auto-redirect away).
+  // If a session already exists, offer Continue / Logout.
+  const existing = AUTH.getSession();
+  const continueBanner = existing
+    ? `<div class="flash flash-info" style="margin-bottom:1rem;">
+         You are already signed in as <strong>${H.esc(existing.full_name || existing.username)}</strong>
+         (${H.esc((existing.role || "").toUpperCase())}).
+         <div style="margin-top:0.55rem;display:flex;flex-wrap:wrap;gap:0.4rem;">
+           <a href="${homeHashForSession(existing)}" class="btn btn-primary" style="font-size:0.8rem;">Continue</a>
+           <a href="#" id="forceLogoutLink" class="btn btn-danger" style="font-size:0.8rem;">Logout &amp; switch account</a>
+         </div>
+       </div>`
+    : "";
+
   document.getElementById("app").innerHTML = `
     <div class="auth-wrap"><div class="auth-box">
       <h1>🎓 Mehedi's University Management System</h1>
       <p class="welcome-text">Welcome</p>
       <p class="subtitle">Sign in</p>
-      <div id="flashArea"></div>
+      <div id="flashArea">${continueBanner}</div>
       <div class="login-types" role="tablist" aria-label="Login type">
         <button type="button" class="login-type" data-login-type="student">Student Login</button>
         <button type="button" class="login-type" data-login-type="faculty">Faculty Login</button>
@@ -910,6 +937,17 @@ async function pageLogin() {
       <div class="auth-footer">No account? <a href="#signup">Sign Up</a></div>
     </div></div>`;
   Flash.render(document.getElementById("flashArea"));
+
+  const forceLogout = document.getElementById("forceLogoutLink");
+  if (forceLogout) {
+    forceLogout.addEventListener("click", e => {
+      e.preventDefault();
+      AUTH.logout();
+      Flash.push("Logged out. You can sign in with another account.", "success");
+      location.hash = "#login";
+      route();
+    });
+  }
   
   const LOGIN_TYPE_META = {
     student: { label: "Student ID or Email", placeholder: "STU001" },
@@ -1075,7 +1113,144 @@ async function pageDashboard() {
     return;
   }
 
-  // ========== ADMIN / FACULTY DASHBOARD ==========
+  // ========== FACULTY PERSONAL DASHBOARD ==========
+  if (isFacultySession(session)) {
+    const faculty = await getCurrentFaculty(session);
+    if (!faculty) {
+      pageContent.innerHTML = `
+        <h1 class="page-title">Faculty Dashboard</h1>
+        <div class="flash flash-warning">Your faculty profile is not fully set up yet. Please contact the administrator or complete your profile.</div>
+        <div class="card"><div class="card-body">
+          <a href="#profile" class="btn btn-primary">Go to My Profile</a>
+          <a href="#faculty" class="btn btn-ghost" style="margin-left:0.5rem;">Manage Faculty Records</a>
+        </div></div>`;
+      return;
+    }
+
+    const [courses, exams] = await Promise.all([DB.getTable("courses"), DB.getTable("exams")]);
+    // Courses assigned to this faculty (match by faculty sheet id or by faculty_id code)
+    const myCourses = courses.filter(c =>
+      Number(c.faculty_id) === Number(faculty.id) ||
+      String(c.faculty_id) === String(faculty.faculty_id)
+    );
+    const myCourseIds = new Set(myCourses.map(c => Number(c.id)));
+    const myExams = exams.filter(x => myCourseIds.has(Number(x.course_id)));
+
+    const resumeLink = faculty.resume_url
+      ? `<a href="${H.esc(faculty.resume_url)}" target="_blank" class="btn btn-primary" rel="noopener">View / Download Resume</a>
+         <button type="button" class="btn btn-ghost" id="removeResumeBtn" style="margin-left:0.4rem;">Remove Resume</button>`
+      : `<span style="color:#9ca3af;">No resume uploaded yet.</span>`;
+
+    pageContent.innerHTML = `
+      <div class="welcome-banner">${timeGreeting()}, ${H.esc(session.full_name || faculty.first_name)}!</div>
+      <h1 class="page-title">Faculty Dashboard</h1>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="number">${H.esc(faculty.faculty_id)}</div><div class="label">Faculty ID</div></div>
+        <div class="stat-card"><div class="number">${myCourses.length}</div><div class="label">Assigned Courses</div></div>
+        <div class="stat-card"><div class="number">${myExams.length}</div><div class="label">Exams</div></div>
+        <div class="stat-card"><div class="number">${H.esc(faculty.department || "—")}</div><div class="label">Department</div></div>
+      </div>
+
+      <div class="card"><div class="card-header">About Me</div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group"><label>Full Name</label><input value="${H.esc(H.fullName(faculty))}" readonly></div>
+          <div class="form-group"><label>Email</label><input value="${H.esc(faculty.email || session.email)}" readonly></div>
+          <div class="form-group"><label>Phone</label><input value="${H.esc(faculty.phone || "—")}" readonly></div>
+          <div class="form-group"><label>Department</label><input value="${H.esc(faculty.department || "—")}" readonly></div>
+          <div class="form-group"><label>Designation</label><input value="${H.esc(faculty.designation || "—")}" readonly></div>
+          <div class="form-group"><label>Faculty ID</label><input value="${H.esc(faculty.faculty_id)}" readonly></div>
+        </div>
+      </div></div>
+
+      <div class="card"><div class="card-header">My Resume</div>
+      <div class="card-body">
+        <div style="margin-bottom:1rem;">${resumeLink}</div>
+        <div class="form-group">
+          <label>Upload / Replace Resume (PDF, DOC, DOCX – max 5 MB)</label>
+          <input type="file" id="resumeInput" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+        </div>
+        <p id="resumeHint" style="color:#9ca3af;font-size:0.8rem;margin-top:0.4rem;">Select a file then click Upload Resume.</p>
+        <button type="button" class="btn btn-primary" id="uploadResumeBtn" style="margin-top:0.5rem;">Upload Resume</button>
+      </div></div>
+
+      <div class="card"><div class="card-header">My Assigned Courses (${myCourses.length})</div>
+      <div class="card-body table-wrap">
+        ${myCourses.length ? `<table><thead><tr><th>Code</th><th>Title</th><th>Credits</th><th>Department</th><th>Semester</th></tr></thead><tbody>
+          ${myCourses.map(c => `<tr>
+            <td>${H.esc(c.course_code)}</td><td>${H.esc(c.title)}</td><td>${H.esc(c.credits)}</td>
+            <td>${H.esc(c.department)}</td><td>${H.esc(c.semester)}</td></tr>`).join("")}
+        </tbody></table>` : `<p class="empty">No courses assigned to you yet.</p>`}
+      </div></div>
+
+      <div class="card"><div class="card-header">Quick Links</div>
+      <div class="card-body" style="display:flex;flex-wrap:wrap;gap:0.75rem;">
+        <a href="#profile" class="btn btn-primary">Edit My Profile</a>
+        <a href="#faculty" class="btn btn-primary">Faculty Records</a>
+        <a href="#courses" class="btn btn-primary">Courses</a>
+        <a href="#exams" class="btn btn-primary">Exams & Results</a>
+        <a href="#students" class="btn btn-primary">Students</a>
+      </div></div>`;
+
+    // Resume upload handler
+    const resumeInput = document.getElementById("resumeInput");
+    const uploadBtn = document.getElementById("uploadResumeBtn");
+    const resumeHint = document.getElementById("resumeHint");
+
+    if (uploadBtn) {
+      uploadBtn.addEventListener("click", async () => {
+        const file = resumeInput && resumeInput.files && resumeInput.files[0];
+        if (!file) {
+          resumeHint.textContent = "Please choose a resume file first.";
+          return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          resumeHint.textContent = "File is too large (max 5 MB).";
+          return;
+        }
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = "Uploading…";
+        resumeHint.textContent = "Reading and uploading resume…";
+        try {
+          const dataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error("Could not read the file."));
+            reader.readAsDataURL(file);
+          });
+          const res = await DB.api("saveresume", { id: faculty.id, resume: dataUrl });
+          if (res.ok) {
+            Flash.push(res.message || "Resume uploaded.", "success");
+            route();
+          } else {
+            throw new Error(res.error || "Upload failed");
+          }
+        } catch (err) {
+          resumeHint.textContent = err.message || "Upload failed.";
+          uploadBtn.disabled = false;
+          uploadBtn.textContent = "Upload Resume";
+        }
+      });
+    }
+
+    const removeResumeBtn = document.getElementById("removeResumeBtn");
+    if (removeResumeBtn) {
+      removeResumeBtn.addEventListener("click", () => {
+        H.confirm("Remove your resume?", async () => {
+          try {
+            await DB.api("removeresume", { id: faculty.id });
+            Flash.push("Resume removed.", "info");
+            route();
+          } catch (err) {
+            Flash.push(err.message, "danger");
+          }
+        });
+      });
+    }
+    return;
+  }
+
+  // ========== ADMIN DASHBOARD ==========
   const [sc, fc, cc, ec, fees, bc, rc, ac, students] = await Promise.all([
     DB.count("students"), DB.count("faculty"), DB.count("courses"), DB.count("enrollments"),
     DB.getTable("fees"), DB.count("books"), DB.count("rooms"), DB.count("allocations"),
@@ -1557,6 +1732,7 @@ async function pageFaculty() {
             <th>Designation</th>
             <th>Email</th>
             <th>Phone</th>
+            <th>Resume</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -1570,6 +1746,7 @@ async function pageFaculty() {
             <td>${H.esc(f.designation)}</td>
             <td>${H.esc(f.email)}</td>
             <td>${H.esc(f.phone)}</td>
+            <td>${f.resume_url ? `<a href="${H.esc(f.resume_url)}" target="_blank" rel="noopener" class="btn btn-ghost" style="font-size:0.75rem;padding:0.2rem 0.5rem;">View</a>` : "—"}</td>
             <td style="white-space:nowrap;">
               <a href="#" class="btn btn-primary" data-edit="${f.id}" style="margin-right:0.3rem;">Edit</a>
               <a href="#" class="btn btn-danger" data-del="${f.id}">Delete</a>
@@ -2511,7 +2688,16 @@ async function route() {
       case "library":    await pageLibrary(); break;
       case "hostel":     await pageHostel(); break;
       case "profile":    await pageProfile(); break;
-      default:           await pageDashboard(); break;
+      default:
+        // Unknown route → login if signed out, otherwise home for that role
+        if (!AUTH.isLoggedIn()) {
+          location.hash = "#login";
+          await pageLogin();
+        } else {
+          location.hash = homeHashForSession(AUTH.getSession());
+          await route();
+        }
+        break;
     }
   } catch (err) {
     if (err.message !== "redirect") {
@@ -2526,6 +2712,11 @@ window.addEventListener("DOMContentLoaded", () => {
   if (!UMS_CONFIG.SCRIPT_URL || UMS_CONFIG.SCRIPT_URL.indexOf("PASTE_YOUR") !== -1) {
     const banner = document.getElementById("configBanner");
     if (banner) banner.classList.remove("hidden");
+  }
+  // Always land on a real hash so GitHub Pages opens the login screen directly
+  if (!location.hash || location.hash === "#") {
+    location.hash = AUTH.isLoggedIn() ? homeHashForSession(AUTH.getSession()) : "#login";
+    // hashchange will call route(); avoid double-run only if hash was already set
   }
   route();
 
