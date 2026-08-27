@@ -1,13 +1,6 @@
 /**
  * University Management System – Google Apps Script Backend
- * ---------------------------------------------------------
- * 1. Create a new Google Spreadsheet
- * 2. Extensions → Apps Script → paste this entire file
- * 3. Run the function `setupSheets` once (from the editor)
- * 4. Deploy → New deployment → Web app
- *      - Execute as: Me
- *      - Who has access: Anyone
- * 5. Copy the Web App URL and put it in js/config.js
+ * Profile photos are stored on Google Drive and the URL is saved on the users sheet.
  */
 
 const TABLES = [
@@ -17,7 +10,7 @@ const TABLES = [
 ];
 
 const HEADERS = {
-  users:        ["id", "username", "email", "password", "full_name", "role", "student_id", "faculty_id", "created_at"],
+  users:        ["id", "username", "email", "password", "full_name", "role", "student_id", "faculty_id", "created_at", "photo_url", "photo_file_id"],
   students:     ["id", "student_id", "first_name", "last_name", "email", "phone", "department", "year", "gender", "address", "created_at"],
   faculty:      ["id", "faculty_id", "first_name", "last_name", "email", "phone", "department", "designation", "created_at"],
   courses:      ["id", "course_code", "title", "credits", "department", "faculty_id", "semester"],
@@ -33,7 +26,10 @@ const HEADERS = {
 };
 
 function doGet(e) {
-  return handleRequest(e);
+  return HtmlService.createTemplateFromFile("index").evaluate()
+    .setTitle("University Management System")
+    .addMetaTag("viewport", "width=device-width, initial-scale=1.0")
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 function doPost(e) {
@@ -80,29 +76,67 @@ function handleRequest(e) {
       case "signup":
         result = signupUser(body.data || {});
         break;
-      case "issueid":
-        result = issueId(body.type, body.label, body.recipientEmail);
+      case "saveprofile":
+        result = saveProfile(Number(body.id || body.userId), body.data || {});
         break;
-      case "sendidemail":
-        result = sendIdEmail(body.id);
+      case "savephoto":
+        result = saveProfilePhoto(Number(body.id || body.userId), body.photo || body.photo_url || "");
         break;
-      case "seedadmin":
-        result = ensureDefaultAdmin();
-        break;
-      case "askai":
-        result = askAI(body.prompt);
+      case "removephoto":
+        result = removeProfilePhoto(Number(body.id || body.userId));
         break;
       case "ping":
-        result = { ok: true, message: "UMS Google Sheets API is running" };
+        result = { ok: true, message: "UMS API is running" };
+        break;
+      case "issueid":
+        result = issueId(body.type, body.label, body.recipientEmail || body.recipient_email);
+        break;
+      case "sendidemail":
+        result = sendIdEmail(Number(body.id));
+        break;
+      case "askai":
+      case "aichat":
+        result = { ok: true, reply: "AI assistant is not configured yet. Please contact the administrator." };
         break;
       default:
         result = { ok: false, error: "Unknown action: " + action };
     }
 
+    result = sanitizeData(result);
     return jsonResponse(result);
   } catch (err) {
     return jsonResponse({ ok: false, error: err.message || String(err) });
   }
+}
+
+function getGravatarUrl(email) {
+  if (!email) return "https://www.gravatar.com/avatar/?d=mp";
+  const cleanEmail = String(email).trim().toLowerCase();
+  const rawHash = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, cleanEmail);
+  let hashStr = "";
+  for (let i = 0; i < rawHash.length; i++) {
+    let byteStr = (rawHash[i] < 0 ? rawHash[i] + 256 : rawHash[i]).toString(16);
+    if (byteStr.length === 1) byteStr = "0" + byteStr;
+    hashStr += byteStr;
+  }
+  return "https://www.gravatar.com/avatar/" + hashStr + "?d=mp&s=200";
+}
+
+function userPhoto(user) {
+  if (user && user.photo_url) return user.photo_url;
+  return getGravatarUrl(user && user.email);
+}
+
+/** Never send passwords back. Keep student_id — the UI needs it. */
+function sanitizeData(obj) {
+  if (!obj || typeof obj !== "object") return obj;
+  if (Array.isArray(obj)) return obj.map(item => sanitizeData(item));
+  const cleanObj = {};
+  for (let key in obj) {
+    if (key === "password") continue;
+    cleanObj[key] = sanitizeData(obj[key]);
+  }
+  return cleanObj;
 }
 
 function jsonResponse(obj) {
@@ -121,8 +155,25 @@ function getSheet(table) {
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
     sheet.setFrozenRows(1);
+  } else {
+    ensureHeaders(sheet, HEADERS[table]);
   }
   return sheet;
+}
+
+function ensureHeaders(sheet, expected) {
+  const lastCol = Math.max(sheet.getLastColumn(), 1);
+  const current = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
+  const missing = expected.filter(h => current.indexOf(h) === -1);
+  if (!missing.length) return;
+  const next = current.concat(missing);
+  sheet.getRange(1, 1, 1, next.length).setValues([next]);
+  sheet.getRange(1, 1, 1, next.length).setFontWeight("bold");
+}
+
+function sheetHeaders(sheet) {
+  const lastCol = Math.max(sheet.getLastColumn(), 1);
+  return sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
 }
 
 function sheetToObjects(sheet) {
@@ -136,17 +187,6 @@ function sheetToObjects(sheet) {
     for (let j = 0; j < headers.length; j++) {
       let val = data[i][j];
       if (val !== "" && val !== null && val !== undefined) empty = false;
-      // Convert numbers that should stay numbers
-      if (headers[j] === "id" || headers[j].endsWith("_id") ||
-          headers[j] === "credits" || headers[j] === "amount" ||
-          headers[j] === "max_marks" || headers[j] === "marks_obtained" ||
-          headers[j] === "total_copies" || headers[j] === "available_copies" ||
-          headers[j] === "capacity" || headers[j] === "occupied") {
-        val = (val === "" || val === null) ? null : Number(val);
-      }
-      if (headers[j] === "paid") {
-        val = (val === true || val === "TRUE" || val === "true" || val === 1 || val === "1");
-      }
       obj[headers[j]] = val === "" ? null : val;
     }
     if (!empty) rows.push(obj);
@@ -164,72 +204,69 @@ function nextId(sheet) {
   return max + 1;
 }
 
+function findRowIndex(sheet, id) {
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (Number(data[i][0]) === Number(id)) return i + 1;
+  }
+  return -1;
+}
+
 function listRows(table) {
-  const sheet = getSheet(table);
-  return { ok: true, data: sheetToObjects(sheet) };
+  return { ok: true, data: sheetToObjects(getSheet(table)) };
 }
 
 function getRow(table, id) {
   const rows = sheetToObjects(getSheet(table));
-  const row = rows.find(r => Number(r.id) === id) || null;
-  return { ok: true, data: row };
+  return { ok: true, data: rows.find(r => Number(r.id) === id) || null };
 }
 
 function insertRow(table, data) {
   const sheet = getSheet(table);
-  const headers = HEADERS[table];
+  const headers = sheetHeaders(sheet);
   const id = nextId(sheet);
   data.id = id;
-  if (!data.created_at && headers.indexOf("created_at") !== -1) {
-    data.created_at = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd");
-  }
   const row = headers.map(h => (data[h] !== undefined && data[h] !== null) ? data[h] : "");
   sheet.appendRow(row);
   return { ok: true, id: id, data: data };
 }
 
-function updateRow(table, id, patch) {
+function updateRow(table, id, data) {
   const sheet = getSheet(table);
-  const data = sheet.getDataRange().getValues();
-  const headers = data[0].map(String);
-  for (let i = 1; i < data.length; i++) {
-    if (Number(data[i][0]) === id) {
-      for (let j = 0; j < headers.length; j++) {
-        const h = headers[j];
-        if (h !== "id" && patch[h] !== undefined) {
-          data[i][j] = patch[h] === null ? "" : patch[h];
-        }
-      }
-      sheet.getRange(i + 1, 1, 1, headers.length).setValues([data[i]]);
-      const obj = {};
-      headers.forEach((h, j) => obj[h] = data[i][j] === "" ? null : data[i][j]);
-      return { ok: true, data: obj };
-    }
-  }
-  return { ok: false, error: "Row not found" };
+  const headers = sheetHeaders(sheet);
+  const rowIndex = findRowIndex(sheet, id);
+  if (rowIndex === -1) return { ok: false, error: "Row not found with id: " + id };
+
+  const currentRange = sheet.getRange(rowIndex, 1, 1, headers.length);
+  const currentValues = currentRange.getValues()[0];
+  const updated = headers.map((h, idx) => {
+    if (h === "id") return id;
+    if (data[h] !== undefined) return data[h] === null ? "" : data[h];
+    return currentValues[idx];
+  });
+  currentRange.setValues([updated]);
+  return { ok: true, id: id, data: data };
 }
 
 function deleteRow(table, id) {
   const sheet = getSheet(table);
-  const data = sheet.getDataRange().getValues();
-  for (let i = data.length - 1; i >= 1; i--) {
-    if (Number(data[i][0]) === id) {
-      sheet.deleteRow(i + 1);
-      return { ok: true };
-    }
-  }
-  return { ok: false, error: "Row not found" };
+  const rowIndex = findRowIndex(sheet, id);
+  if (rowIndex === -1) return { ok: false, error: "Row not found with id: " + id };
+  sheet.deleteRow(rowIndex);
+  return { ok: true, id: id };
 }
 
 function deleteWhere(table, field, value) {
   const sheet = getSheet(table);
+  const headers = sheetHeaders(sheet);
+  const colIndex = headers.indexOf(field);
+  if (colIndex === -1) return { ok: false, error: "Invalid field: " + field };
+
   const data = sheet.getDataRange().getValues();
-  const headers = data[0].map(String);
-  const col = headers.indexOf(field);
-  if (col === -1) return { ok: false, error: "Unknown field" };
   let deleted = 0;
   for (let i = data.length - 1; i >= 1; i--) {
-    if (String(data[i][col]) === String(value)) {
+    const cellVal = data[i][colIndex];
+    if (String(cellVal) === String(value) || Number(cellVal) === Number(value)) {
       sheet.deleteRow(i + 1);
       deleted++;
     }
@@ -238,7 +275,6 @@ function deleteWhere(table, field, value) {
 }
 
 function hashPassword(password) {
-  // Same simple demo hash as the original static version (not secure, demo only)
   let hash = 0;
   const s = String(password);
   for (let i = 0; i < s.length; i++) {
@@ -248,254 +284,307 @@ function hashPassword(password) {
   return "h_" + hash + "_" + s.length;
 }
 
+function publicUser(user) {
+  return {
+    id: user.id,
+    username: user.username,
+    full_name: user.full_name || user.username,
+    role: user.role,
+    email: user.email,
+    student_id: user.student_id || null,
+    faculty_id: user.faculty_id || null,
+    photo_url: userPhoto(user)
+  };
+}
+
 function loginUser(usernameOrEmail, password, loginType) {
   const users = sheetToObjects(getSheet("users"));
-  const user = users.find(u =>
-    u.username === usernameOrEmail || u.email === usernameOrEmail
-  );
+  const user = users.find(u => u.username === usernameOrEmail || u.email === usernameOrEmail);
 
   if (!user || user.password !== hashPassword(password)) {
     return { ok: false, error: "Invalid username or password" };
   }
 
-  // Enforce that the selected login tab matches the account's actual role.
-  // A Student ID/password can only sign in through Student Login, a Faculty
-  // ID/password only through Faculty Login, etc.
-  const type = String(loginType || "administrative").toLowerCase();
-  const requiredRoleByType = { student: "student", faculty: "faculty", administrative: "admin" };
-  const requiredRole = requiredRoleByType[type];
-
-  if (requiredRole && user.role !== requiredRole) {
-    const label = { student: "Student", faculty: "Faculty", admin: "Administrative" }[requiredRole] || requiredRole;
-    return {
-      ok: false,
-      error: "This account is not registered for " + label + " Login. Please choose the correct login tab."
-    };
-  }
-
-  return {
-    ok: true,
-    user: {
-      id: user.id,
-      username: user.username,
-      full_name: user.full_name || user.username,
-      role: user.role,
-      email: user.email,
-      student_id: user.student_id || null,
-      faculty_id: user.faculty_id || null
-    }
-  };
-}
-
-function issueId(type, label, recipientEmail) {
-  type = String(type || "").trim().toLowerCase();
-  if (type !== "student" && type !== "faculty") {
-    return { ok: false, error: "Invalid ID type. Choose Student or Faculty." };
-  }
-  recipientEmail = String(recipientEmail || "").trim();
-  if (!recipientEmail) {
-    return { ok: false, error: "Recipient email is required so the signup can be auto-matched." };
-  }
-
-  const prefix = type === "student" ? "STU" : "FAC";
-  const rows = sheetToObjects(getSheet("id_cards"));
-
-  const dupe = rows.some(function(r) {
-    return r.type === type &&
-      String(r.recipient_email || "").toLowerCase() === recipientEmail.toLowerCase() &&
-      r.status !== "used";
-  });
-  if (dupe) {
-    return { ok: false, error: "This email already has an unused " + (type === "student" ? "Student" : "Faculty") + " ID issued." };
-  }
-
-  let maxNum = 0;
-  rows.forEach(function(r) {
-    if (r.type !== type) return;
-    const m = String(r.code || "").match(new RegExp("^" + prefix + "(\\d+)$"));
-    if (m) {
-      const n = parseInt(m[1], 10);
-      if (n > maxNum) maxNum = n;
-    }
-  });
-  const code = prefix + String(maxNum + 1).padStart(3, "0");
-
-  const result = insertRow("id_cards", {
-    code: code,
-    type: type,
-    label: (label || "").trim() || null,
-    recipient_email: recipientEmail,
-    status: "available",
-    issued_date: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd")
-  });
-  return { ok: true, code: code, id: result.id };
-}
-
-function sendIdEmail(id) {
-  const cardId = Number(id);
-  const rows = sheetToObjects(getSheet("id_cards"));
-  const card = rows.find(function(c) { return Number(c.id) === cardId; });
-
-  if (!card) return { ok: false, error: "ID not found." };
-  if (!card.recipient_email) return { ok: false, error: "No recipient email saved for this ID." };
-  if (card.status === "used") return { ok: false, error: "This ID has already been used — no need to send it." };
-
-  const typeLabel = card.type === "student" ? "Student" : "Faculty";
-  const subject = "Your " + typeLabel + " ID for Mehedi's University Management System";
-  const body =
-    "Hello" + (card.label ? " " + card.label : "") + ",\n\n" +
-    "Your " + typeLabel + " ID is: " + card.code + "\n\n" +
-    "Go to the Sign Up page, choose \"" + typeLabel + " Sign Up\", and enter this ID along with your " +
-    "email and a password to create your account.\n\n" +
-    "Once your account is created, sign in from the \"" + typeLabel + " Login\" tab.\n\n" +
-    "This ID can only be used once.\n\n" +
-    "— University Management System";
-
-  MailApp.sendEmail(card.recipient_email, subject, body);
-
-  updateRow("id_cards", card.id, {
-    email_sent_date: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd")
-  });
-
-  return { ok: true, message: "Email sent to " + card.recipient_email };
+  return { ok: true, user: publicUser(user) };
 }
 
 function signupUser(data) {
-  const role = String(data.role || "").trim().toLowerCase(); // "student" or "faculty"
-  if (role !== "student" && role !== "faculty") {
-    return { ok: false, error: "Invalid signup type. Choose Student or Faculty." };
-  }
-
-  const identifierField = role === "student" ? "student_id" : "faculty_id";
-  const identifierLabel = role === "student" ? "Student ID" : "Faculty ID";
   const email = (data.email || "").trim();
   const password = data.password || "";
   const full_name = (data.full_name || "").trim();
+  const role = String(data.role || "student").toLowerCase();
 
   if (!email || !password) {
     return { ok: false, error: "Email and password are required." };
   }
-  if (password.length < 6) {
-    return { ok: false, error: "Password must be at least 6 characters." };
+
+  const existing = sheetToObjects(getSheet("users"));
+  if (existing.some(u => u.email && u.email.toLowerCase() === email.toLowerCase())) {
+    return { ok: false, error: "An account with this email already exists." };
   }
 
-  // No manual ID entry anymore — match this signup to a card an admin already
-  // issued to this exact email in the ID Cards tab.
-  const idCards = sheetToObjects(getSheet("id_cards"));
-  const card = idCards.find(function(c) {
-    return c.type === role &&
-      String(c.recipient_email || "").toLowerCase() === email.toLowerCase() &&
-      c.status !== "used";
-  });
-  if (!card) {
-    return {
-      ok: false,
-      error: "No available " + identifierLabel + " has been issued to this email. Please contact the administrator."
-    };
-  }
-
-  const identifier = card.code;
-
-  const users = sheetToObjects(getSheet("users"));
-  const duplicate = users.some(u => u.username === identifier || u.email === email);
-  if (duplicate) {
-    return { ok: false, error: "An account with this " + identifierLabel + " or email already exists." };
-  }
+  // Match a pre-issued ID card by email + type (if available)
+  const cards = sheetToObjects(getSheet("id_cards"));
+  const matched = cards.find(c =>
+    c.recipient_email &&
+    String(c.recipient_email).toLowerCase() === email.toLowerCase() &&
+    String(c.type || "").toLowerCase() === role &&
+    String(c.status || "available").toLowerCase() !== "used"
+  );
 
   const payload = {
-    username: identifier,
+    username: email.split("@")[0],
     email: email,
     password: hashPassword(password),
-    full_name: full_name || card.label || identifier,
+    full_name: full_name || email.split("@")[0],
     role: role,
     created_at: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd")
   };
-  payload[identifierField] = identifier;
+
+  if (matched) {
+    if (role === "student") payload.student_id = matched.code;
+    if (role === "faculty") payload.faculty_id = matched.code;
+  }
 
   const result = insertRow("users", payload);
 
-  updateRow("id_cards", card.id, {
-    status: "used",
-    used_by: result.id,
-    used_date: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd")
-  });
+  // Mark the ID card as used
+  if (matched) {
+    updateRow("id_cards", matched.id, {
+      status: "used",
+      used_by: result.id,
+      used_date: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd")
+    });
+  }
 
   return {
     ok: true,
-    message: "Account created successfully! Your " + identifierLabel + " is " + identifier + ". Please login using " + identifierLabel + " Login.",
-    id: result.id
+    message: "Account created successfully!",
+    user: {
+      id: result.id,
+      email: email,
+      full_name: payload.full_name,
+      role: role,
+      student_id: payload.student_id || null,
+      faculty_id: payload.faculty_id || null,
+      photo_url: getGravatarUrl(email)
+    }
   };
 }
 
-function ensureDefaultAdmin() {
-  const users = sheetToObjects(getSheet("users"));
-  const admin = users.find(u => u.username === "admin");
-  if (admin) {
-    return { ok: true, message: "Admin already exists", id: admin.id };
-  }
-  const result = insertRow("users", {
-    username: "admin",
-    email: "admin@university.edu",
-    password: hashPassword("admin123"),
-    full_name: "System Administrator",
-    role: "admin",
-    created_at: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd")
-  });
-  return { ok: true, message: "Admin created", id: result.id };
-}
-
-function askAI(prompt) {
-  prompt = String(prompt || "").trim();
-  if (!prompt) return { ok: false, error: "Please enter a question." };
-
-  const apiKey = PropertiesService.getScriptProperties().getProperty("GEMINI_API_KEY");
-  if (!apiKey) {
-    return { ok: false, error: "AI is not configured. Add GEMINI_API_KEY in Script Properties." };
-  }
-
-  const model = PropertiesService.getScriptProperties().getProperty("GEMINI_MODEL") || "gemini-3.6-flash";
-  const response = UrlFetchApp.fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + encodeURIComponent(apiKey),
-    {
-    method: "post",
-    contentType: "application/json",
-    payload: JSON.stringify({
-      systemInstruction: {
-        parts: [{
-          text: "You are an intelligent assistant integrated into Mehedi's University Management System. Provide concise and helpful support regarding student, course, fee, and hostel records."
-        }]
-      },
-      contents: [{
-        role: "user",
-        parts: [{ text: prompt }]
-      }],
-      generationConfig: {
-        temperature: 0.7
-      }
-    }),
-    muteHttpExceptions: true
+/** Generate next Student (STU###) or Faculty (FAC###) ID automatically. */
+function nextCode(type) {
+  const prefix = type === "faculty" ? "FAC" : "STU";
+  const cards = sheetToObjects(getSheet("id_cards"));
+  let max = 0;
+  cards.forEach(c => {
+    if (String(c.type || "").toLowerCase() !== type) return;
+    const m = String(c.code || "").match(new RegExp("^" + prefix + "(\\d+)$", "i"));
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (n > max) max = n;
     }
-  );
-
-  const status = response.getResponseCode();
-  const data = JSON.parse(response.getContentText());
-  if (status < 200 || status >= 300) {
-    return { ok: false, error: data.error && data.error.message || "Gemini request failed." };
+  });
+  // Also check existing students/faculty sheets so codes stay unique
+  if (type === "student") {
+    sheetToObjects(getSheet("students")).forEach(s => {
+      const m = String(s.student_id || "").match(/^STU(\d+)$/i);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (n > max) max = n;
+      }
+    });
+  } else {
+    sheetToObjects(getSheet("faculty")).forEach(f => {
+      const m = String(f.faculty_id || "").match(/^FAC(\d+)$/i);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (n > max) max = n;
+      }
+    });
   }
-  const reply = data.candidates && data.candidates[0] &&
-    data.candidates[0].content && data.candidates[0].content.parts &&
-    data.candidates[0].content.parts.map(function(part) { return part.text || ""; }).join("");
-  return reply ? { ok: true, reply: reply } : { ok: false, error: "Gemini returned no answer." };
+  const next = max + 1;
+  return prefix + String(next).padStart(3, "0");
 }
 
 /**
- * Run this ONCE from the Apps Script editor
- * (select setupSheets → Run)
+ * Issue a new Student or Faculty ID (auto-generated code).
+ * Called from the ID Cards page "Generate ID" button.
  */
-function setupSheets() {
-  TABLES.forEach(function(t) {
-    getSheet(t);
-  });
-  ensureDefaultAdmin();
-  SpreadsheetApp.getUi().alert("All sheets created and default admin ready!\n\nUsername: admin\nPassword: admin123");
+function issueId(type, label, recipientEmail) {
+  type = String(type || "student").toLowerCase();
+  if (type !== "student" && type !== "faculty") {
+    return { ok: false, error: "Type must be student or faculty." };
+  }
+  recipientEmail = String(recipientEmail || "").trim();
+  if (!recipientEmail) {
+    return { ok: false, error: "Recipient email is required." };
+  }
+
+  // Prevent duplicate available card for same email + type
+  const cards = sheetToObjects(getSheet("id_cards"));
+  const dup = cards.find(c =>
+    c.recipient_email &&
+    String(c.recipient_email).toLowerCase() === recipientEmail.toLowerCase() &&
+    String(c.type || "").toLowerCase() === type &&
+    String(c.status || "available").toLowerCase() !== "used"
+  );
+  if (dup) {
+    return { ok: false, error: "An unused " + type + " ID already exists for this email: " + dup.code };
+  }
+
+  const code = nextCode(type);
+  const issued = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd");
+  const row = {
+    code: code,
+    type: type,
+    label: String(label || "").trim() || "",
+    recipient_email: recipientEmail,
+    status: "available",
+    issued_date: issued,
+    email_sent_date: "",
+    used_by: "",
+    used_date: ""
+  };
+  const result = insertRow("id_cards", row);
+  return {
+    ok: true,
+    id: result.id,
+    code: code,
+    type: type,
+    message: (type === "faculty" ? "Faculty" : "Student") + " ID generated: " + code
+  };
+}
+
+/** Send the issued ID to the recipient by email (optional). */
+function sendIdEmail(id) {
+  if (!id) return { ok: false, error: "Missing ID card id." };
+  const row = getRow("id_cards", id);
+  if (!row.data) return { ok: false, error: "ID card not found." };
+  const card = row.data;
+  if (!card.recipient_email) return { ok: false, error: "No recipient email on this ID." };
+  if (String(card.status || "").toLowerCase() === "used") {
+    return { ok: false, error: "This ID has already been used." };
+  }
+
+  const kind = card.type === "faculty" ? "Faculty" : "Student";
+  const subject = "Your " + kind + " ID – Mehedi's University Management System";
+  const body =
+    "Hello" + (card.label ? " " + card.label : "") + ",\n\n" +
+    "Your " + kind + " ID has been issued:\n\n" +
+    "  ID Code : " + card.code + "\n" +
+    "  Email   : " + card.recipient_email + "\n\n" +
+    "Sign up on the University Management System using this exact email address. " +
+    "The system will automatically link your account to this ID.\n\n" +
+    "— Mehedi's University Management System";
+
+  try {
+    MailApp.sendEmail(card.recipient_email, subject, body);
+    const sent = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd");
+    updateRow("id_cards", id, { email_sent_date: sent });
+    return { ok: true, message: "Email sent to " + card.recipient_email };
+  } catch (err) {
+    return { ok: false, error: "Could not send email: " + (err.message || String(err)) };
+  }
+}
+
+function getAvatarFolder() {
+  const name = "UMS Profile Photos";
+  const it = DriveApp.getFoldersByName(name);
+  if (it.hasNext()) return it.next();
+  return DriveApp.createFolder(name);
+}
+
+function drivePhotoUrl(fileId) {
+  return "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w400";
+}
+
+function saveBlobPhoto(userId, dataUrl) {
+  const match = String(dataUrl).match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+  if (!match) throw new Error("Invalid image data. Please choose a JPG or PNG photo.");
+  const mime = match[1];
+  const bytes = Utilities.base64Decode(match[2]);
+  if (bytes.length > 2 * 1024 * 1024) throw new Error("Photo is too large. Use an image under 2 MB.");
+  const ext = mime.indexOf("png") !== -1 ? "png" : "jpg";
+  const blob = Utilities.newBlob(bytes, mime, "avatar_" + userId + "." + ext);
+
+  const folder = getAvatarFolder();
+  const old = folder.getFilesByName("avatar_" + userId + ".jpg");
+  while (old.hasNext()) old.next().setTrashed(true);
+  const oldPng = folder.getFilesByName("avatar_" + userId + ".png");
+  while (oldPng.hasNext()) oldPng.next().setTrashed(true);
+
+  const file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return { fileId: file.getId(), url: drivePhotoUrl(file.getId()) };
+}
+
+function saveProfilePhoto(userId, photoData) {
+  if (!userId) return { ok: false, error: "Missing user id." };
+  if (!photoData) return { ok: false, error: "No photo provided." };
+
+  const row = getRow("users", userId);
+  if (!row.data) return { ok: false, error: "User not found." };
+
+  let photo_url = "";
+  let photo_file_id = "";
+
+  try {
+    const saved = saveBlobPhoto(userId, photoData);
+    photo_url = saved.url;
+    photo_file_id = saved.fileId;
+  } catch (err) {
+    // Drive may be blocked; store a compressed data URL in the sheet instead.
+    if (String(photoData).length > 45000) {
+      return { ok: false, error: "Photo is too large to save. Try a smaller image." };
+    }
+    photo_url = photoData;
+  }
+
+  updateRow("users", userId, { photo_url: photo_url, photo_file_id: photo_file_id });
+  return { ok: true, photo_url: photo_url, message: "Profile picture saved." };
+}
+
+function removeProfilePhoto(userId) {
+  if (!userId) return { ok: false, error: "Missing user id." };
+  const row = getRow("users", userId);
+  if (!row.data) return { ok: false, error: "User not found." };
+
+  if (row.data.photo_file_id) {
+    try {
+      const file = DriveApp.getFileById(String(row.data.photo_file_id));
+      file.setTrashed(true);
+    } catch (_) {}
+  }
+
+  updateRow("users", userId, { photo_url: "", photo_file_id: "" });
+  return { ok: true, photo_url: getGravatarUrl(row.data.email), message: "Profile picture removed." };
+}
+
+function saveProfile(userId, data) {
+  if (!userId) return { ok: false, error: "Missing user id." };
+  const row = getRow("users", userId);
+  if (!row.data) return { ok: false, error: "User not found." };
+
+  const patch = {};
+  if (data.full_name !== undefined) patch.full_name = String(data.full_name || "").trim();
+
+  let photo_url = row.data.photo_url || "";
+  if (data.remove_photo) {
+    const removed = removeProfilePhoto(userId);
+    photo_url = removed.photo_url || "";
+  } else if (data.photo || data.photo_url) {
+    const saved = saveProfilePhoto(userId, data.photo || data.photo_url);
+    if (!saved.ok) return saved;
+    photo_url = saved.photo_url;
+  }
+
+  if (Object.keys(patch).length) updateRow("users", userId, patch);
+
+  const fresh = getRow("users", userId).data;
+  return {
+    ok: true,
+    message: "Profile saved.",
+    user: publicUser(Object.assign({}, fresh, { photo_url: photo_url || userPhoto(fresh) }))
+  };
 }
