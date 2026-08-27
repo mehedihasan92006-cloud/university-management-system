@@ -303,7 +303,7 @@
    CONFIG – paste your Google Apps Script Web App URL here
    ============================================================ */
 const UMS_CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwDz0j6TyBxJ3obNovQdE2u4H2S0ftMqXS0cc7IpaRDqBKanElCNjyjyjDtLcc4DMKPaw/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbylMKPNEwi5d1swt9_PrV_WVMOT6RELgNKi4GilCWe5_g8sNilLJ6h2K8mOsIKfipv3GA/exec",
   SHOW_LOADING: false
 };
 
@@ -574,7 +574,7 @@ function calcGrade(marks, max) {
 /* ============================================================
    ROUTER + LAYOUT
    ============================================================ */
-const NAV = [
+const NAV_ADMIN = [
   { key: "dashboard", label: "Dashboard" },
   { key: "accounts", label: "Accounts" },
   { key: "idcards", label: "ID Cards" },
@@ -587,6 +587,28 @@ const NAV = [
   { key: "library", label: "Library" },
   { key: "hostel", label: "Hostel" }
 ];
+
+const NAV_STUDENT = [
+  { key: "dashboard", label: "My Dashboard" },
+  { key: "myfees", label: "My Fees" },
+  { key: "myidcard", label: "My ID Card" },
+  { key: "admitcard", label: "Admit Card" },
+  { key: "profile", label: "My Profile" }
+];
+
+function isStudentSession(session) {
+  return session && (session.role === "student" || session.login_type === "student");
+}
+
+async function getCurrentStudent(session) {
+  if (!session) return null;
+  const code = session.student_id || session.username;
+  const students = await DB.getTable("students");
+  return students.find(s =>
+    s.student_id === code ||
+    (s.email && session.email && s.email.toLowerCase() === session.email.toLowerCase())
+  ) || null;
+}
 
 function generatedAvatar(name, email) {
   const label = (name || email || "User").trim().split(/\s+/).map(word => word[0]).join("").slice(0, 2).toUpperCase();
@@ -614,7 +636,8 @@ function getRoute() {
 }
 
 function renderNavbar(activeKey, session) {
-  const links = NAV.map(item =>
+  const navItems = isStudentSession(session) ? NAV_STUDENT : NAV_ADMIN;
+  const links = navItems.map(item =>
     `<a href="#${item.key}" class="${item.key === activeKey ? "active" : ""}">${item.label}</a>`
   ).join("");
   const profileName = session.full_name || session.username || "User";
@@ -646,12 +669,7 @@ async function showAppShell(activeKey) {
   const app = document.getElementById("app");
   app.innerHTML = renderNavbar(activeKey, session) +
     `<div class="container"><div id="flashArea"></div><div id="pageContent"></div></div>`;
-  if (session.login_type === "student" || session.role === "user") {
-    const info = document.createElement("div");
-    info.className = "flash flash-info session-access-info";
-    info.innerHTML = 'You are viewing the system as a <strong>Student</strong>. You can view data, but cannot add, edit or delete.';
-    document.getElementById("flashArea").appendChild(info);
-  } else if (session.login_type === "faculty" || session.role === "faculty") {
+  if (!isStudentSession(session) && (session.login_type === "faculty" || session.role === "faculty")) {
     const info = document.createElement("div");
     info.className = "flash flash-info session-access-info";
     info.innerHTML = 'You are logged in as <strong>Faculty</strong>. You can add, edit and delete data.';
@@ -814,6 +832,62 @@ async function pageSignup() {
 
 async function pageDashboard() {
   const session = await showAppShell("dashboard");
+
+  // ========== STUDENT PERSONAL DASHBOARD ==========
+  if (isStudentSession(session)) {
+    const student = await getCurrentStudent(session);
+    if (!student) {
+      document.getElementById("pageContent").innerHTML = `
+        <h1 class="page-title">My Dashboard</h1>
+        <div class="flash flash-warning">Your student profile is not fully set up yet. Please contact the administrator.</div>`;
+      return;
+    }
+    const isPaid = f => f.paid === true || f.paid === 1 || f.paid === "TRUE" || f.paid === "true" || f.status === "Paid";
+    const [allFees, enrollments, courses, results, exams] = await Promise.all([
+      DB.getTable("fees"), DB.getTable("enrollments"), DB.getTable("courses"),
+      DB.getTable("results"), DB.getTable("exams")
+    ]);
+    const myFees = allFees.filter(f => Number(f.student_id) === Number(student.id));
+    const pendingFees = myFees.filter(f => !isPaid(f));
+    const paidFees = myFees.filter(f => isPaid(f));
+    const totalPending = pendingFees.reduce((s, f) => s + Number(f.amount || 0), 0);
+    const totalPaid = paidFees.reduce((s, f) => s + Number(f.amount || 0), 0);
+    const myEnrolls = enrollments.filter(e => Number(e.student_id) === Number(student.id));
+    const myResults = results.filter(r => Number(r.student_id) === Number(student.id));
+
+    document.getElementById("pageContent").innerHTML = `
+      <div class="welcome-banner">${timeGreeting()}, ${H.esc(session.full_name || student.first_name)}!</div>
+      <h1 class="page-title">My Dashboard</h1>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="number">${H.esc(student.student_id)}</div><div class="label">Student ID</div></div>
+        <div class="stat-card"><div class="number">${myEnrolls.length}</div><div class="label">Enrolled Courses</div></div>
+        <div class="stat-card"><div class="number">${pendingFees.length}</div><div class="label">Pending Fees</div></div>
+        <div class="stat-card"><div class="number">${H.money(totalPending)}</div><div class="label">Amount Due</div></div>
+        <div class="stat-card"><div class="number">${H.money(totalPaid)}</div><div class="label">Total Paid</div></div>
+        <div class="stat-card"><div class="number">${myResults.length}</div><div class="label">Results</div></div>
+      </div>
+      <div class="card"><div class="card-header">My Profile Summary</div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group"><label>Full Name</label><input value="${H.esc(H.fullName(student))}" readonly></div>
+          <div class="form-group"><label>Email</label><input value="${H.esc(student.email)}" readonly></div>
+          <div class="form-group"><label>Department</label><input value="${H.esc(student.department || "—")}" readonly></div>
+          <div class="form-group"><label>Year</label><input value="${H.esc(student.year || "—")}" readonly></div>
+          <div class="form-group"><label>Phone</label><input value="${H.esc(student.phone || "—")}" readonly></div>
+          <div class="form-group"><label>Gender</label><input value="${H.esc(student.gender || "—")}" readonly></div>
+        </div>
+      </div></div>
+      <div class="card"><div class="card-header">Quick Links</div>
+      <div class="card-body" style="display:flex;flex-wrap:wrap;gap:0.75rem;">
+        <a href="#myfees" class="btn btn-primary">View My Fees & Payments</a>
+        <a href="#myidcard" class="btn btn-primary">My ID Card</a>
+        <a href="#admitcard" class="btn btn-primary">Download Admit Card</a>
+        <a href="#profile" class="btn btn-primary">My Profile</a>
+      </div></div>`;
+    return;
+  }
+
+  // ========== ADMIN / FACULTY DASHBOARD ==========
   const [sc, fc, cc, ec, fees, bc, rc, ac, students] = await Promise.all([
     DB.count("students"), DB.count("faculty"), DB.count("courses"), DB.count("enrollments"),
     DB.getTable("fees"), DB.count("books"), DB.count("rooms"), DB.count("allocations"),
@@ -847,6 +921,191 @@ async function pageDashboard() {
     </div>
     <div class="card"><div class="card-header">Recently Added Students</div>
     <div class="card-body table-wrap">${recentRows}</div></div>`;
+}
+
+/* ============================================================
+   STUDENT PORTAL PAGES
+   ============================================================ */
+async function pageMyFees() {
+  const session = await showAppShell("myfees");
+  if (!isStudentSession(session)) { location.hash = "#dashboard"; return; }
+  const student = await getCurrentStudent(session);
+  if (!student) {
+    document.getElementById("pageContent").innerHTML = `<h1 class="page-title">My Fees</h1><div class="flash flash-warning">Student profile not found.</div>`;
+    return;
+  }
+  const isPaid = f => f.paid === true || f.paid === 1 || f.paid === "TRUE" || f.paid === "true" || f.status === "Paid";
+  const allFees = await DB.getTable("fees");
+  const myFees = allFees.filter(f => Number(f.student_id) === Number(student.id)).sort((a, b) => b.id - a.id);
+  const pending = myFees.filter(f => !isPaid(f));
+  const paid = myFees.filter(f => isPaid(f));
+  const totalPending = pending.reduce((s, f) => s + Number(f.amount || 0), 0);
+  const totalPaid = paid.reduce((s, f) => s + Number(f.amount || 0), 0);
+
+  const rows = myFees.length
+    ? `<table><thead><tr><th>ID</th><th>Type</th><th>Amount</th><th>Due Date</th><th>Status</th><th>Paid Date</th></tr></thead><tbody>
+       ${myFees.map(f => {
+         const paidFlag = isPaid(f);
+         return `<tr>
+           <td>${f.id}</td>
+           <td>${H.esc(f.fee_type || "—")}</td>
+           <td>${H.money(f.amount)}</td>
+           <td>${H.esc(f.due_date || "—")}</td>
+           <td>${paidFlag ? H.badge("Paid", "success") : H.badge("Pending", "warning")}</td>
+           <td>${H.esc(f.paid_date || "—")}</td>
+         </tr>`;
+       }).join("")}
+       </tbody></table>`
+    : `<p class="empty">No fee records found for you.</p>`;
+
+  document.getElementById("pageContent").innerHTML = `
+    <h1 class="page-title">My Fees & Payments</h1>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="number">${pending.length}</div><div class="label">Pending</div></div>
+      <div class="stat-card"><div class="number">${H.money(totalPending)}</div><div class="label">Amount Due</div></div>
+      <div class="stat-card"><div class="number">${paid.length}</div><div class="label">Paid</div></div>
+      <div class="stat-card"><div class="number">${H.money(totalPaid)}</div><div class="label">Total Paid</div></div>
+    </div>
+    <div class="card"><div class="card-header">Payment History (${myFees.length})</div>
+    <div class="card-body table-wrap">${rows}</div></div>
+    <p style="color:#9ca3af;font-size:0.85rem;margin-top:0.5rem;">Contact the accounts office to make payments. This page only shows your fee records.</p>`;
+}
+
+async function pageMyIdCard() {
+  const session = await showAppShell("myidcard");
+  if (!isStudentSession(session)) { location.hash = "#dashboard"; return; }
+  const student = await getCurrentStudent(session);
+  const cards = await DB.getTable("id_cards");
+  const myCard = cards.find(c =>
+    c.type === "student" &&
+    (c.code === (session.student_id || session.username) ||
+     (c.recipient_email && session.email && c.recipient_email.toLowerCase() === session.email.toLowerCase()))
+  );
+
+  document.getElementById("pageContent").innerHTML = `
+    <h1 class="page-title">My ID Card</h1>
+    <div class="card"><div class="card-body" style="text-align:center;padding:2rem;">
+      ${myCard ? `
+        <div style="display:inline-block;background:linear-gradient(135deg,#4c1d95,#7c3aed);color:white;padding:1.5rem 2.5rem;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,0.4);min-width:280px;">
+          <div style="font-size:0.85rem;opacity:0.85;margin-bottom:0.5rem;">Mehedi's University</div>
+          <div style="font-size:1.6rem;font-weight:800;letter-spacing:0.05em;margin-bottom:0.75rem;">${H.esc(myCard.code)}</div>
+          <div style="font-size:1.05rem;font-weight:600;">${H.esc(session.full_name || (student ? H.fullName(student) : "Student"))}</div>
+          <div style="font-size:0.85rem;opacity:0.9;margin-top:0.35rem;">Student</div>
+          <div style="margin-top:1rem;font-size:0.75rem;opacity:0.8;">
+            Issued: ${H.esc(myCard.issued_date || "—")}<br>
+            Status: ${myCard.status === "used" ? "Active" : H.esc(myCard.status || "—")}
+          </div>
+        </div>
+        <p style="margin-top:1.25rem;color:#9ca3af;font-size:0.9rem;">This is your official Student ID. Keep it safe.</p>
+      ` : `
+        <div class="flash flash-warning">No ID card record found for your account.</div>
+      `}
+    </div></div>`;
+}
+
+async function pageAdmitCard() {
+  const session = await showAppShell("admitcard");
+  if (!isStudentSession(session)) { location.hash = "#dashboard"; return; }
+  const student = await getCurrentStudent(session);
+  if (!student) {
+    document.getElementById("pageContent").innerHTML = `<h1 class="page-title">Admit Card</h1><div class="flash flash-warning">Student profile not found.</div>`;
+    return;
+  }
+  const [enrollments, courses, exams] = await Promise.all([
+    DB.getTable("enrollments"), DB.getTable("courses"), DB.getTable("exams")
+  ]);
+  const myEnrolls = enrollments.filter(e => Number(e.student_id) === Number(student.id) && (e.status || "Active") === "Active");
+  const courseIds = new Set(myEnrolls.map(e => Number(e.course_id)));
+  const myCourses = courses.filter(c => courseIds.has(Number(c.id)));
+  const myExams = exams.filter(ex => courseIds.has(Number(ex.course_id))).sort((a, b) => String(a.exam_date || "").localeCompare(String(b.exam_date || "")));
+
+  const examRows = myExams.length
+    ? myExams.map(ex => {
+        const c = courses.find(r => Number(r.id) === Number(ex.course_id)) || {};
+        return `<tr><td>${H.esc(c.course_code || "—")}</td><td>${H.esc(ex.exam_name)}</td><td>${H.esc(ex.exam_date || "TBA")}</td><td>${H.esc(ex.max_marks)}</td></tr>`;
+      }).join("")
+    : `<tr><td colspan="4" style="text-align:center;color:#9ca3af;">No exams scheduled yet</td></tr>`;
+
+  document.getElementById("pageContent").innerHTML = `
+    <h1 class="page-title">Admit Card</h1>
+    <div class="card" id="admitCardPrintArea">
+      <div class="card-body" style="padding:1.5rem;">
+        <div style="text-align:center;border-bottom:2px solid #7c3aed;padding-bottom:1rem;margin-bottom:1.25rem;">
+          <div style="font-size:1.3rem;font-weight:800;color:#f9fafb;">Mehedi's University Management System</div>
+          <div style="font-size:1.05rem;color:#c4b5fd;margin-top:0.25rem;">EXAMINATION ADMIT CARD</div>
+        </div>
+        <div class="form-grid" style="margin-bottom:1.25rem;">
+          <div class="form-group"><label>Student ID</label><input value="${H.esc(student.student_id)}" readonly></div>
+          <div class="form-group"><label>Full Name</label><input value="${H.esc(H.fullName(student))}" readonly></div>
+          <div class="form-group"><label>Department</label><input value="${H.esc(student.department || "—")}" readonly></div>
+          <div class="form-group"><label>Year</label><input value="${H.esc(student.year || "—")}" readonly></div>
+          <div class="form-group"><label>Email</label><input value="${H.esc(student.email || "—")}" readonly></div>
+          <div class="form-group"><label>Generated</label><input value="${H.esc(new Date().toLocaleDateString())}" readonly></div>
+        </div>
+        <h3 style="color:#e5e7eb;margin-bottom:0.5rem;font-size:1rem;">Enrolled Courses</h3>
+        <p style="color:#9ca3af;font-size:0.9rem;margin-bottom:1rem;">
+          ${myCourses.length ? myCourses.map(c => H.esc(c.course_code + " – " + (c.title || ""))).join(", ") : "No active enrollments"}
+        </p>
+        <h3 style="color:#e5e7eb;margin-bottom:0.5rem;font-size:1rem;">Exam Schedule</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Course</th><th>Exam</th><th>Date</th><th>Max Marks</th></tr></thead>
+            <tbody>${examRows}</tbody>
+          </table>
+        </div>
+        <p style="margin-top:1.25rem;font-size:0.8rem;color:#9ca3af;text-align:center;">
+          This is a system-generated admit card. Carry a printed copy and a valid photo ID to the examination hall.
+        </p>
+      </div>
+    </div>
+    <div style="margin-top:1rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+      <button type="button" class="btn btn-primary" id="printAdmitBtn">🖨️ Print / Save as PDF</button>
+      <button type="button" class="btn btn-primary" id="downloadAdmitBtn">⬇️ Download as HTML</button>
+    </div>`;
+
+  document.getElementById("printAdmitBtn").addEventListener("click", () => {
+    const area = document.getElementById("admitCardPrintArea");
+    const win = window.open("", "_blank");
+    win.document.write(`<!DOCTYPE html><html><head><title>Admit Card - ${H.esc(student.student_id)}</title>
+      <style>
+        body{font-family:system-ui,sans-serif;padding:24px;color:#111;background:#fff;}
+        table{width:100%;border-collapse:collapse;margin-top:8px;}
+        th,td{border:1px solid #ccc;padding:8px;text-align:left;font-size:14px;}
+        th{background:#f3f4f6;}
+        h1,h2,h3{margin:0 0 8px;}
+        .header{text-align:center;border-bottom:2px solid #7c3aed;padding-bottom:12px;margin-bottom:16px;}
+        .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+        .grid div{font-size:14px;} label{font-weight:600;display:block;color:#555;font-size:12px;}
+      </style></head><body>
+      <div class="header"><h1>Mehedi's University Management System</h1><h2>EXAMINATION ADMIT CARD</h2></div>
+      <div class="grid">
+        <div><label>Student ID</label>${H.esc(student.student_id)}</div>
+        <div><label>Full Name</label>${H.esc(H.fullName(student))}</div>
+        <div><label>Department</label>${H.esc(student.department || "—")}</div>
+        <div><label>Year</label>${H.esc(student.year || "—")}</div>
+        <div><label>Email</label>${H.esc(student.email || "—")}</div>
+        <div><label>Generated</label>${H.esc(new Date().toLocaleDateString())}</div>
+      </div>
+      <h3>Enrolled Courses</h3>
+      <p>${myCourses.length ? myCourses.map(c => H.esc(c.course_code + " – " + (c.title || ""))).join(", ") : "None"}</p>
+      <h3>Exam Schedule</h3>
+      <table><thead><tr><th>Course</th><th>Exam</th><th>Date</th><th>Max Marks</th></tr></thead>
+      <tbody>${examRows}</tbody></table>
+      <p style="margin-top:20px;font-size:12px;text-align:center;color:#666;">System-generated admit card. Carry a printed copy and photo ID.</p>
+      </body></html>`);
+    win.document.close();
+    setTimeout(() => { win.print(); }, 300);
+  });
+
+  document.getElementById("downloadAdmitBtn").addEventListener("click", () => {
+    const html = document.getElementById("admitCardPrintArea").outerHTML;
+    const blob = new Blob([`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Admit Card</title></head><body style="font-family:sans-serif;padding:20px;">${html}</body></html>`], { type: "text/html" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `AdmitCard_${student.student_id}.html`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
 }
 
 async function pageAccounts() {
@@ -1773,11 +2032,24 @@ const PAGES = {
   fees: pageFees,
   exams: pageExams,
   library: pageLibrary,
-  hostel: pageHostel
+  hostel: pageHostel,
+  // Student portal pages
+  myfees: pageMyFees,
+  myidcard: pageMyIdCard,
+  admitcard: pageAdmitCard
 };
 
 async function route() {
   const name = getRoute();
+  // Students may only access their own portal pages
+  const session = AUTH.getSession();
+  if (session && isStudentSession(session)) {
+    const allowed = ["dashboard", "myfees", "myidcard", "admitcard", "profile", "login", "signup"];
+    if (!allowed.includes(name)) {
+      location.hash = "#dashboard";
+      return;
+    }
+  }
   const fn = PAGES[name] || pageLogin;
   try {
     await fn();
